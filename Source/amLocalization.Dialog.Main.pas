@@ -394,7 +394,7 @@ type
     procedure SpellCheckerCheckStart(Sender: TdxCustomSpellChecker; AControl: TWinControl; var AAllow: Boolean);
     procedure ActionImportFileSourceExecute(Sender: TObject);
     procedure ActionImportFileTargetExecute(Sender: TObject);
-    procedure TreeListModulesGetNodeImageIndex(Sender: TcxCustomTreeList; ANode: TcxTreeListNode; AIndexType: TcxTreeListImageIndexType; var AIndex: TImageIndex);
+    procedure TreeListModulesGetNodeImageIndex(Sender: TcxCustomTreeList; ANode: TcxTreeListNode; AIndexType: TcxTreeListImageIndexType; var AIndex: TcxImageIndex);
     procedure ActionAutomationTranslateExecute(Sender: TObject);
     procedure ActionAutomationTranslateUpdate(Sender: TObject);
     procedure ActionFindNextExecute(Sender: TObject);
@@ -475,7 +475,7 @@ type
       ACellViewInfo: TcxGridTableDataCellViewInfo; const AMousePos: TPoint; var AHintText: TCaption; var AIsHintMultiLine: Boolean;
       var AHintTextRect: TRect);
     procedure GridItemsTableViewColumnTargetValidateDrawValue(Sender: TcxCustomGridTableItem; ARecord: TcxCustomGridRecord;
-      const AValue: Variant; AData: TcxEditValidateInfo);
+      const AValue: TcxEditValue; AData: TcxEditValidateInfo);
     procedure GridItemsTableViewMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure GridItemsTableViewMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure GridItemsTableViewFocusedRecordChanged(Sender: TcxCustomGridTableView; APrevFocusedRecord,
@@ -595,6 +595,7 @@ type
     procedure SaveSettings;
     procedure ApplySettings;
     procedure ApplyCustomSettings;
+    procedure ApplyListStyles;
     function QueueRestart(Immediately: boolean = False): boolean;
   private
     // Hints
@@ -636,6 +637,8 @@ type
     procedure MsgFileOpen(var Msg: TMsgFileOpen); message MSG_FILE_OPEN;
     procedure MsgRefreshModuleStats(var Msg: TMessage); message MSG_REFRESH_MODULE_STATS;
     procedure MsgCopyData(var Msg: TWMCopyData); message WM_COPYDATA;
+  protected
+    procedure ScaleFactorChanged(M: Integer; D: Integer); override;
   private
     // Translation project event handlers
     procedure OnProjectChanged(Sender: TObject);
@@ -1203,6 +1206,62 @@ end;
 
 // -----------------------------------------------------------------------------
 
+procedure TFormMain.ApplyListStyles;
+
+  procedure ApplyListStyle(AListStyle: TListStyle; Style: TcxStyle);
+  var
+    ListStyle: TTranslationManagerListStyleSettings;
+  begin
+    ListStyle := TranslationManagerSettings.Editor.Style[AListStyle];
+
+    if (ListStyle.ColorBackground <> clDefault) then
+      Style.Color := ListStyle.ColorBackground
+    else
+    if (TranslationManagerSettings.Editor.Style[ListStyleDefault].ColorBackground <> clDefault) then
+      Style.Color := TranslationManagerSettings.Editor.Style[ListStyleDefault].ColorBackground
+    else
+      Style.Color := clWhite;
+
+    if (ListStyle.ColorText <> clDefault) then
+      Style.TextColor := ListStyle.ColorText
+    else
+    if (TranslationManagerSettings.Editor.Style[ListStyleDefault].ColorText <> clDefault) then
+      Style.TextColor := TranslationManagerSettings.Editor.Style[ListStyleDefault].ColorText
+    else
+      Style.TextColor := clBlack;
+
+    if (ListStyle.Bold <> -1) then
+    begin
+      if (ListStyle.Bold = 1) then
+        Style.Font.Style := Style.Font.Style + [fsBold]
+      else
+        Style.Font.Style := Style.Font.Style - [fsBold];
+    end else
+    if (TranslationManagerSettings.Editor.Style[ListStyleDefault].Bold = 1) then
+      Style.Font.Style := Style.Font.Style + [fsBold]
+    else
+      Style.Font.Style := Style.Font.Style - [fsBold];
+
+    // Make sure we're using the correct font
+    if (TcxStyleValue.svFont in Style.AssignedValues) then
+      Style.Font.Name := Font.Name;
+  end;
+
+begin
+  ApplyListStyle(ListStyleDefault, DataModuleMain.StyleDefault);
+  ApplyListStyle(ListStyleSelected, DataModuleMain.StyleSelected);
+  ApplyListStyle(ListStyleInactive, DataModuleMain.StyleSelectedInactive);
+  ApplyListStyle(ListStyleFocused, DataModuleMain.StyleFocused);
+  ApplyListStyle(ListStyleNotTranslated, DataModuleMain.StyleNeedTranslation);
+  ApplyListStyle(ListStyleProposed, DataModuleMain.StyleProposed);
+  ApplyListStyle(ListStyleTranslated, DataModuleMain.StyleComplete);
+  ApplyListStyle(ListStyleHold, DataModuleMain.StyleHold);
+  ApplyListStyle(ListStyleDontTranslate, DataModuleMain.StyleDontTranslate);
+  ApplyListStyle(ListStyleSynthesized, DataModuleMain.StyleSynthesized);
+end;
+
+// -----------------------------------------------------------------------------
+
 procedure TFormMain.ApplySettings;
 begin
   (*
@@ -1247,6 +1306,8 @@ begin
   ** Settings that can be modified via GUI
   *)
   RibbonMain.ColorSchemeName := DataModuleMain.SkinName;
+
+  ApplyListStyles;
 
   if (TranslationManagerSettings.Editor.UseProposedStatus) then
     TLocalizerTranslations.DefaultStatus := tStatusProposed
@@ -1298,6 +1359,13 @@ begin
 
   TranslationManagerSettings.Valid := True;
   TranslationManagerSettings.WriteConfig;
+end;
+
+procedure TFormMain.ScaleFactorChanged(M, D: Integer);
+begin
+  inherited ScaleFactorChanged(M, D);
+  // TODO : Does not appear to be necessary anymore
+  DataModuleMain.FontSizeChanged(Font.Size);
 end;
 
 // -----------------------------------------------------------------------------
@@ -1536,7 +1604,7 @@ begin
   try
     FormSplash.Version := TVersionInfo.FileVersionString(Application.ExeName);
     FormSplash.DisplayBannerResource('CREDITS', 'TEXT', sbStaticFade);
-    FormSplash.BannerOffset := Abs(FormSplash.Font.Height);
+    FormSplash.BannerOffset := Abs(FormSplash.Font.Height); // TODO : HighDPI
 
     FormSplash.Execute(False);
   except
@@ -6287,7 +6355,7 @@ begin
 end;
 
 procedure TFormMain.GridItemsTableViewColumnTargetValidateDrawValue(Sender: TcxCustomGridTableItem; ARecord: TcxCustomGridRecord;
-  const AValue: Variant; AData: TcxEditValidateInfo);
+  const AValue: TcxEditValue; AData: TcxEditValidateInfo);
 var
   Prop: TLocalizerProperty;
   Translation: TLocalizerTranslation;
@@ -6397,21 +6465,22 @@ procedure TFormMain.GridItemsTableViewCustomDrawCell(Sender: TcxCustomGridTableV
       ACanvas.Brush.Style := bsSolid;
       ACanvas.Brush.Color := clSkyBlue;
 
+      var CornerSize := ScaleFactor.Apply(HintCornerSize);
       if (UseRightToLeftReading) or (TargetLanguage.IsRightToLeft and TranslationManagerSettings.Editor.EditBiDiMode) then
       begin
         // Top left corner
         Triangle[0].X := AViewInfo.Bounds.Left+1;
-        Triangle[1].X := Triangle[0].X + HintCornerSize;
+        Triangle[1].X := Triangle[0].X + CornerSize;
       end else
       begin
         // Top right corner
         Triangle[0].X := AViewInfo.Bounds.Right-2;
-        Triangle[1].X := Triangle[0].X - HintCornerSize;
+        Triangle[1].X := Triangle[0].X - CornerSize;
       end;
       Triangle[0].Y := AViewInfo.Bounds.Top;
       Triangle[1].Y := Triangle[0].Y;
       Triangle[2].X := Triangle[0].X;
-      Triangle[2].Y := Triangle[0].Y + HintCornerSize;
+      Triangle[2].Y := Triangle[0].Y + CornerSize;
 
       ACanvas.Polygon(Triangle);
 
@@ -6473,12 +6542,12 @@ var
   Flag: TPropertyFlag;
   ImageIndex: integer;
   s: string;
-const
-  OffsetNumeric = 10; // Note: Each node can have only one numeric bookmark ATM
-  OffsetFlag = 8;
 begin
   if (not (AViewInfo is TcxGridIndicatorRowItemViewInfo)) then
     Exit;
+
+  var OffsetNumeric := ScaleFactor.Apply(10); // Note: Each node can have only one numeric bookmark ATM
+  var OffsetFlag := ScaleFactor.Apply(8);
 
   if (TcxGridIndicatorRowItemViewInfo(AViewInfo).RowViewInfo.Focused) or (TcxGridIndicatorRowItemViewInfo(AViewInfo).RowViewInfo.Selected) then
     ACanvas.FillRect(AViewInfo.Bounds, DataModuleMain.StyleSelected.Color)
@@ -6491,7 +6560,7 @@ begin
   s := string.Create('9', Trunc(Log10(AViewInfo.GridView.ViewData.RowCount)+1));
   r := AViewInfo.Bounds;
   // Draw row number right-aligned
-  r.Right := r.Left+ACanvas.TextWidth(s)+4;
+  r.Right := r.Left+ACanvas.TextWidth(s)+ScaleFactor.Apply(4);
   ACanvas.Font.Color := AViewInfo.Params.TextColor;
   ACanvas.Brush.Style := bsClear;
   s := IntToStr(TcxGridIndicatorRowItemViewInfo(AViewInfo).RowViewInfo.GridRecord.Index + 1);
@@ -7799,7 +7868,7 @@ begin
   RefreshModuleStats;
 end;
 
-procedure TFormMain.TreeListModulesGetNodeImageIndex(Sender: TcxCustomTreeList; ANode: TcxTreeListNode; AIndexType: TcxTreeListImageIndexType; var AIndex: TImageIndex);
+procedure TFormMain.TreeListModulesGetNodeImageIndex(Sender: TcxCustomTreeList; ANode: TcxTreeListNode; AIndexType: TcxTreeListImageIndexType; var AIndex: TcxImageIndex);
 var
   Module: TLocalizerModule;
   TranslatedCount: integer;
