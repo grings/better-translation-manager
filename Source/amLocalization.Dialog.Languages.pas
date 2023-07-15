@@ -23,6 +23,7 @@ uses
   cxTextEdit, cxMaskEdit, cxDropDownEdit, cxLookupEdit, cxDBLookupEdit, cxDBExtLookupComboBox, cxLabel,
 
   VirtualTrees,
+  VirtualTrees.Types,
 
   amLanguageInfo,
   amLocalization.Dialog;
