@@ -1411,6 +1411,45 @@ inherited FormSettings: TFormSettings
       Visible = False
       OnPaint = PaintBoxColorSamplePaint
     end
+    object EditTranslatorDeepLAPIKey: TcxButtonEdit [77]
+      Left = 224
+      Top = 350
+      Properties.Buttons = <
+        item
+          Enabled = False
+          ImageIndex = 0
+          Kind = bkGlyph
+          Visible = False
+        end>
+      Properties.Images = ImageList
+      Style.HotTrack = False
+      Style.TransparentBorder = False
+      TabOrder = 35
+      Width = 314
+    end
+    object RadioGroupEditTranslatorDeepLAPIVersion: TcxRadioGroup [78]
+      Left = 25
+      Top = 387
+      Caption = 'DeepL API Version'
+      ParentBackground = False
+      ParentColor = False
+      Properties.Columns = 2
+      Properties.DefaultValue = False
+      Properties.Items = <
+        item
+          Caption = 'Free version'
+          Value = False
+        end
+        item
+          Caption = 'Pro version'
+          Value = True
+        end>
+      Style.Color = 15921906
+      Style.TransparentBorder = False
+      TabOrder = 36
+      Height = 75
+      Width = 513
+    end
     inherited LayoutControlGroup_Root: TdxLayoutGroup
       AlignVert = avClient
       ItemIndex = 1

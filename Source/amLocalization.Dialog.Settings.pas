@@ -315,6 +315,11 @@ type
     LayoutItemColorSample: TdxLayoutItem;
     PaintBoxColorSample: TPaintBox;
     dxLayoutAutoCreatedGroup12: TdxLayoutAutoCreatedGroup;
+    LayoutGroupTranslatorDeepL: TdxLayoutGroup;
+    EditTranslatorDeepLAPIKey: TcxButtonEdit;
+    dxLayoutItem26: TdxLayoutItem;
+    RadioGroupEditTranslatorDeepLAPIVersion: TcxRadioGroup;
+    dxLayoutItem39: TdxLayoutItem;
     procedure TextEditTranslatorMSAPIKeyPropertiesButtonClick(Sender: TObject; AButtonIndex: Integer);
     procedure TextEditTranslatorMSAPIKeyPropertiesChange(Sender: TObject);
     procedure ActionCategoryExecute(Sender: TObject);
@@ -647,6 +652,12 @@ begin
     EditTranslatorMSAPIKey.Properties.Buttons[0].ImageIndex := 1;
   EditTranslatorMSAPIRegion.Text := TranslationManagerSettings.Providers.MicrosoftTranslatorV3.Region;
 
+  EditTranslatorDeepLAPIKey.Text := TranslationManagerSettings.Providers.Deepl.APIKey;
+  if TranslationManagerSettings.Providers.Deepl.ProVersion then
+    RadioGroupEditTranslatorDeepLAPIVersion.ItemIndex := 1
+  else
+    RadioGroupEditTranslatorDeepLAPIVersion.ItemIndex := 0;
+
   (*
   ** Files section
   *)
@@ -733,6 +744,9 @@ begin
   TranslationManagerSettings.Providers.MicrosoftTranslatorV3.APIKey := EditTranslatorMSAPIKey.Text;
   TranslationManagerSettings.Providers.MicrosoftTranslatorV3.APIKeyValidated := (EditTranslatorMSAPIKey.Properties.Buttons[0].ImageIndex = 1);
   TranslationManagerSettings.Providers.MicrosoftTranslatorV3.Region := EditTranslatorMSAPIRegion.Text;
+
+  TranslationManagerSettings.Providers.Deepl.APIKey := EditTranslatorDeepLAPIKey.Text;
+  TranslationManagerSettings.Providers.Deepl.ProVersion := (RadioGroupEditTranslatorDeepLAPIVersion.ItemIndex = 1);
 
   (*
   ** Files section
