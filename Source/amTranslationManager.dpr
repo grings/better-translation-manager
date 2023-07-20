@@ -62,6 +62,7 @@ uses
   amLocalization.Dialog.TargetLanguage in 'amLocalization.Dialog.TargetLanguage.pas' {FormTargetLanguage},
   amLocalization.Provider.Microsoft.Terminology.SOAP in 'amLocalization.Provider.Microsoft.Terminology.SOAP.pas',
   amLocalization.Provider.Microsoft.Terminology in 'amLocalization.Provider.Microsoft.Terminology.pas',
+  amLocalization.Provider.DeepL in 'amLocalization.Provider.DeepL.pas',
   amLocalization.TranslationMemory.FileFormats.GenericCSV in 'amLocalization.TranslationMemory.FileFormats.GenericCSV.pas',
   amLocalization.Dialog.TranslationMemory.SelectFileFormat in 'amLocalization.Dialog.TranslationMemory.SelectFileFormat.pas' {FormSelectFileFormat},
   amLocalization.Dialog.StopList in 'amLocalization.Dialog.StopList.pas' {FormStopList},
@@ -86,8 +87,7 @@ uses
   amLocalization.TranslationMemory.Data.API in 'amLocalization.TranslationMemory.Data.API.pas',
   amLocalization.Integration.Tracker.API in 'amLocalization.Integration.Tracker.API.pas',
   amLocalization.Integration.Tracker in 'amLocalization.Integration.Tracker.pas',
-  amLocalization.Application.API in 'amLocalization.Application.API.pas',
-  Localization.Provider.DeepL in 'Externals\Localization.Provider.DeepL.pas';
+  amLocalization.Application.API in 'amLocalization.Application.API.pas';
 
 {$R *.res}
 

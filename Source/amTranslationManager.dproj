@@ -214,6 +214,7 @@
         </DCCReference>
         <DCCReference Include="amLocalization.Provider.Microsoft.Terminology.SOAP.pas"/>
         <DCCReference Include="amLocalization.Provider.Microsoft.Terminology.pas"/>
+        <DCCReference Include="amLocalization.Provider.DeepL.pas"/>
         <DCCReference Include="amLocalization.TranslationMemory.FileFormats.GenericCSV.pas"/>
         <DCCReference Include="amLocalization.Dialog.TranslationMemory.SelectFileFormat.pas">
             <Form>FormSelectFileFormat</Form>
@@ -248,7 +249,6 @@
         <DCCReference Include="amLocalization.Integration.Tracker.pas"/>
         <DCCReference Include="amLocalization.Application.API.pas"/>
         <None Include="..\Bin\Win32\Debug\amTranslationManager.xlat"/>
-        <DCCReference Include="Externals\Localization.Provider.DeepL.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

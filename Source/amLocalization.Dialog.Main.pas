@@ -91,7 +91,7 @@ type
     BarManagerBarFile: TdxBar;
     BarButtonOpenProject: TdxBarLargeButton;
     BarButtonNewProject: TdxBarLargeButton;
-    BarButtonSaveAsProject: TdxBarButton;
+    BarButtonSaveProject: TdxBarButton;
     BarManagerBarProject: TdxBar;
     BarButtonUpdateProject: TdxBarLargeButton;
     BarButtonBuildProject: TdxBarLargeButton;
@@ -101,7 +101,7 @@ type
     ActionList: TActionList;
     ActionProjectOpen: TAction;
     ActionProjectNew: TAction;
-    ActionProjectSaveAs: TAction;
+    ActionProjectSave: TAction;
     ActionProjectUpdate: TAction;
     ActionBuild: TAction;
     ActionImportXLIFF: TAction;
@@ -346,13 +346,10 @@ type
     dxLayoutItem10: TdxLayoutItem;
     dxLayoutItem11: TdxLayoutItem;
     dxLayoutItem12: TdxLayoutItem;
-    ActionProjectSave: TAction;
-    BarButtonSaveProject: TdxBarButton;
-    dxBarButton24: TdxBarButton;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure ActionProjectUpdateExecute(Sender: TObject);
-    procedure ActionProjectSaveAsExecute(Sender: TObject);
+    procedure ActionProjectSaveExecute(Sender: TObject);
     procedure ActionProjectNewExecute(Sender: TObject);
     procedure ActionImportXLIFFExecute(Sender: TObject);
     procedure ActionBuildExecute(Sender: TObject);
@@ -379,7 +376,7 @@ type
     procedure ActionHasItemFocusedUpdate(Sender: TObject);
     procedure BarManagerBarProofingCaptionButtons0Click(Sender: TObject);
     procedure ActionFindSearchExecute(Sender: TObject);
-    procedure ActionProjectSaveAsUpdate(Sender: TObject);
+    procedure ActionProjectSaveUpdate(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure ActionHasProjectUpdate(Sender: TObject);
     procedure ActionHasModulesUpdate(Sender: TObject);
@@ -514,8 +511,6 @@ type
     procedure GridItemsTableViewPopulateCustomScrollbarAnnotationRowIndexList(
       Sender: TcxCustomGridTableView; AAnnotationIndex: Integer;
       ARowIndexList: TdxScrollbarAnnotationRowIndexList);
-    procedure ActionProjectSaveExecute(Sender: TObject);
-    procedure ActionProjectSaveUpdate(Sender: TObject);
   private
     FProject: TLocalizerProject;
     FProjectFilename: string;
@@ -4517,13 +4512,15 @@ begin
   end else
     TaskMessageDlg(sRecoverUnusedStatusTitle, sRecoverUnusedStatusNone, mtInformation, [mbOK], 0);
 end;
-resourcestring
-  sProgressProjectSaving = 'Saving project...';
-procedure TFormMain.ActionProjectSaveAsExecute(Sender: TObject);
+
+procedure TFormMain.ActionProjectSaveExecute(Sender: TObject);
 var
   ProjectFilename, SourceFilename, SymbolFilename: string;
   SaveSourceFilename, SaveSymbolFilename: string;
   Progress: IProgress;
+resourcestring
+  sProgressProjectLoading = 'Loading project...';
+  sProgressProjectSaving = 'Saving project...';
 begin
   ApplyTranslationTextEdit(False);
 
@@ -4598,7 +4595,6 @@ begin
 
     FProjectFilename := ProjectFilename;
 
-    RibbonMain.DocumentName := TPath.GetFileName(FProjectFileName);
     // Make paths absolute again
     FProject.SourceFilename := PathUtil.PathCombinePath(TPath.GetDirectoryName(FProjectFilename), FProject.SourceFilename);
     FProject.StringSymbolFilename := PathUtil.PathCombinePath(TPath.GetDirectoryName(FProject.SourceFilename), FProject.StringSymbolFilename);
@@ -4613,75 +4609,6 @@ begin
   end;
 
   AddRecentFile(ProjectFilename);
-end;
-procedure TFormMain.ActionProjectSaveAsUpdate(Sender: TObject);
-begin
-  TAction(Sender).Enabled := (not FProject.SourceFilename.IsEmpty);
-end;
-procedure TFormMain.ActionProjectSaveExecute(Sender: TObject);
-var
-  ProjectFilename, SourceFilename, SymbolFilename: string;
-  SaveSourceFilename, SaveSymbolFilename: string;
-  Progress: IProgress;
-begin
-  ApplyTranslationTextEdit(False);
-  SaveCursor(crHourGlass);
-  // Save current paths so we can restore them if anything goes wrong
-  SaveSourceFilename := FProject.SourceFilename;
-  SaveSymbolFilename := FProject.StringSymbolFilename;
-  SourceFilename := SaveSourceFilename;
-  SymbolFilename := SaveSymbolFilename;
-  // Ensure that the project has a filename already defined
-  if (FProjectFilename = '') then
-    Exit;
-  // Make sure we have the absolute paths before the base path is changed
-  SourceFilename := PathUtil.PathCombinePath(TPath.GetDirectoryName(FProjectFilename), SourceFilename);
-  SymbolFilename := PathUtil.PathCombinePath(TPath.GetDirectoryName(SourceFilename), SymbolFilename);
-  ProjectFilename := FProjectFilename;
-  Progress := ShowProgress(sProgressProjectSaving);
-  try
-    Progress.Marquee := True;
-    // Save relative paths in project
-    FProject.SourceFilename := PathUtil.FilenameMakeRelative(TPath.GetDirectoryName(ProjectFilename), SourceFilename);
-    FProject.StringSymbolFilename := PathUtil.FilenameMakeRelative(TPath.GetDirectoryName(SourceFilename), SymbolFilename);
-    try
-      Notify(tmaProjectSaving);
-      if (not SafeReplaceFile(ProjectFilename,
-        function(const Filename: string): boolean
-        begin
-          var Options: TLocalizationSaveOptions := [];
-          if (not TranslationManagerSettings.Project.SaveDontTranslate) then
-            Include(Options, soOmitDontTranslateItems);
-          if (TranslationManagerSettings.Project.SaveSorted) then
-            Include(Options, soSort);
-          if (not TranslationManagerSettings.Project.SaveNewState) then
-            Include(Options, soOmitNewState);
-          TLocalizationProjectFiler.SaveToFile(FProject, Filename, Options, Progress);
-          Result := True;
-        end, TranslationManagerSettings.Backup.SaveBackups)) then
-      begin
-        // Something went wrong - restore original absolute paths
-        FProject.SourceFilename := SaveSourceFilename;
-        FProject.StringSymbolFilename := SaveSymbolFilename;
-        Exit;
-      end;
-    except
-      // Something went wrong - restore original absolute paths
-      FProject.SourceFilename := SaveSourceFilename;
-      FProject.StringSymbolFilename := SaveSymbolFilename;
-      raise;
-    end;
-    FProjectFilename := ProjectFilename;
-    // Make paths absolute again
-    FProject.SourceFilename := PathUtil.PathCombinePath(TPath.GetDirectoryName(FProjectFilename), FProject.SourceFilename);
-    FProject.StringSymbolFilename := PathUtil.PathCombinePath(TPath.GetDirectoryName(FProject.SourceFilename), FProject.StringSymbolFilename);
-    FProject.Modified := False;
-    SetInfoText('Saved');
-    Notify(tmaProjectSaved);
-    UpdateProjectModifiedIndicator;
-  finally
-    Progress := nil;
-  end;
 end;
 
 procedure TFormMain.ActionProjectSaveUpdate(Sender: TObject);

@@ -899,10 +899,6 @@ object FormMain: TFormMain
         item
           Visible = True
           ItemName = 'BarButtonSaveProject'
-        end
-        item
-          Visible = True
-          ItemName = 'BarButtonSaveAsProject'
         end>
       OneOnRow = False
       Row = 0
@@ -1277,10 +1273,6 @@ object FormMain: TFormMain
       ItemLinks = <
         item
           Visible = True
-          ItemName = 'dxBarButton24'
-        end
-        item
-          Visible = True
           ItemName = 'dxBarButton34'
         end
         item
@@ -1378,8 +1370,8 @@ object FormMain: TFormMain
       Action = ActionProjectNew
       Category = 0
     end
-    object BarButtonSaveAsProject: TdxBarButton
-      Action = ActionProjectSaveAs
+    object BarButtonSaveProject: TdxBarButton
+      Action = ActionProjectSave
       Category = 0
       LargeImageIndex = 2
     end
@@ -1859,14 +1851,6 @@ object FormMain: TFormMain
       Category = 0
       ButtonStyle = bsChecked
     end
-    object BarButtonSaveProject: TdxBarButton
-      Action = ActionProjectSave
-      Category = 0
-    end
-    object dxBarButton24: TdxBarButton
-      Action = ActionProjectSave
-      Category = 0
-    end
   end
   object OpenDialogXLIFF: TOpenDialog
     Filter = 
@@ -1919,19 +1903,12 @@ object FormMain: TFormMain
     end
     object ActionProjectSave: TAction
       Category = 'File'
-      Caption = 'Save'
+      Caption = 'Save...'
       Hint = 'Save the current translation project'
       ImageIndex = 2
+      ShortCut = 16467
       OnExecute = ActionProjectSaveExecute
       OnUpdate = ActionProjectSaveUpdate
-    end
-    object ActionProjectSaveAs: TAction
-      Category = 'File'
-      Caption = 'Save As...'
-      Hint = 'Save the current translation project with a new name...'
-      ImageIndex = 2
-      OnExecute = ActionProjectSaveAsExecute
-      OnUpdate = ActionProjectSaveAsUpdate
     end
     object ActionProjectUpdate: TAction
       Category = 'Project'

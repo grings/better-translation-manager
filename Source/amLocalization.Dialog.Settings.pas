@@ -315,11 +315,15 @@ type
     LayoutItemColorSample: TdxLayoutItem;
     PaintBoxColorSample: TPaintBox;
     dxLayoutAutoCreatedGroup12: TdxLayoutAutoCreatedGroup;
-    LayoutGroupTranslatorDeepL: TdxLayoutGroup;
     EditTranslatorDeepLAPIKey: TcxButtonEdit;
-    dxLayoutItem26: TdxLayoutItem;
-    RadioGroupEditTranslatorDeepLAPIVersion: TcxRadioGroup;
-    dxLayoutItem39: TdxLayoutItem;
+    LayoutGroupTranslatorDeepL: TdxLayoutGroup;
+    LayoutRadioButtonItemDeepLLicenseFree: TdxLayoutRadioButtonItem;
+    LayoutRadioButtonItemDeepLLicensePro: TdxLayoutRadioButtonItem;
+    LayoutItemTranslatorDeepLAPIKey: TdxLayoutItem;
+    dxLayoutGroup1: TdxLayoutGroup;
+    dxLayoutEmptySpaceItem12: TdxLayoutEmptySpaceItem;
+    ActionProviderDeepLLicenseFree: TAction;
+    ActionProviderDeepLLicensePro: TAction;
     procedure TextEditTranslatorMSAPIKeyPropertiesButtonClick(Sender: TObject; AButtonIndex: Integer);
     procedure TextEditTranslatorMSAPIKeyPropertiesChange(Sender: TObject);
     procedure ActionCategoryExecute(Sender: TObject);
@@ -391,6 +395,9 @@ type
     procedure ImageComboBoxSkinPropertiesChange(Sender: TObject);
     procedure ComboBoxColorSchemePropertiesChange(Sender: TObject);
     procedure PaintBoxColorSamplePaint(Sender: TObject);
+    procedure ActionProviderDeepLLicenseProUpdate(Sender: TObject);
+    procedure EditTranslatorDeepLAPIKeyPropertiesButtonClick(Sender: TObject; AButtonIndex: Integer);
+    procedure EditTranslatorDeepLAPIKeyPropertiesChange(Sender: TObject);
   private
     FSpellCheckerAutoCorrectOptions: TdxSpellCheckerAutoCorrectOptions;
     FRestartRequired: boolean;
@@ -502,10 +509,13 @@ uses
   amLocalization.Shell,
   amLocalization.Data.Main,
   amLocalization.Environment,
-  amLocalization.Provider.Microsoft.Version3;
+  amLocalization.Provider.Microsoft.Version3,
+  amLocalization.Provider.DeepL;
 
 resourcestring
   sValueRequired = 'Value required';
+  sTranslatorAPIKeyValid = 'The API key has been validated.';
+  sTranslatorAPIKeyInvalid = 'The API key could not be validated:'#13#13'%s';
 
 const
   FolderOrder: array[Ord(Low(TTranslationManagerFolder))..Ord(High(TTranslationManagerFolder))] of TTranslationManagerFolder =
@@ -653,10 +663,8 @@ begin
   EditTranslatorMSAPIRegion.Text := TranslationManagerSettings.Providers.MicrosoftTranslatorV3.Region;
 
   EditTranslatorDeepLAPIKey.Text := TranslationManagerSettings.Providers.Deepl.APIKey;
-  if TranslationManagerSettings.Providers.Deepl.ProVersion then
-    RadioGroupEditTranslatorDeepLAPIVersion.ItemIndex := 1
-  else
-    RadioGroupEditTranslatorDeepLAPIVersion.ItemIndex := 0;
+  ActionProviderDeepLLicenseFree.Checked := not TranslationManagerSettings.Providers.Deepl.ProVersion;
+  ActionProviderDeepLLicensePro.Checked := TranslationManagerSettings.Providers.Deepl.ProVersion;
 
   (*
   ** Files section
@@ -746,7 +754,7 @@ begin
   TranslationManagerSettings.Providers.MicrosoftTranslatorV3.Region := EditTranslatorMSAPIRegion.Text;
 
   TranslationManagerSettings.Providers.Deepl.APIKey := EditTranslatorDeepLAPIKey.Text;
-  TranslationManagerSettings.Providers.Deepl.ProVersion := (RadioGroupEditTranslatorDeepLAPIVersion.ItemIndex = 1);
+  TranslationManagerSettings.Providers.Deepl.ProVersion := ActionProviderDeepLLicensePro.Checked;
 
   (*
   ** Files section
@@ -1566,6 +1574,11 @@ begin
   TAction(Sender).Enabled := (EditProofingAutoCorrectReplacementFrom.Text <> '') and (Replacement <> nil) and (not AnsiSameText(Replacement.Replacement, EditProofingAutoCorrectReplacementTo.Text));
 end;
 
+procedure TFormSettings.ActionProviderDeepLLicenseProUpdate(Sender: TObject);
+begin
+  EditTranslatorDeepLAPIKey.Enabled := TAction(Sender).Checked;
+end;
+
 procedure TFormSettings.ActionProviderTMFilenameExecute(Sender: TObject);
 var
   Filename, Path: string;
@@ -1673,6 +1686,37 @@ begin
     ButtonProofingAutoCorrectAdd.Action := ActionProofingReplace
   else
     ButtonProofingAutoCorrectAdd.Action := ActionProofingAdd;
+end;
+
+// -----------------------------------------------------------------------------
+
+procedure TFormSettings.EditTranslatorDeepLAPIKeyPropertiesButtonClick(Sender: TObject; AButtonIndex: Integer);
+var
+  TranslationProvider: ITranslationProviderDeepL;
+  ErrorMessage: string;
+begin
+  EditTranslatorDeepLAPIKey.Properties.Buttons[AButtonIndex].ImageIndex := 0;
+
+  TranslationProvider := TTranslationProviderDeepL.Create;
+  try
+
+    if (TranslationProvider.ValidateAPIKey(EditTranslatorDeepLAPIKey.Text, ActionProviderDeepLLicensePro.Checked, ErrorMessage)) then
+    begin
+      EditTranslatorDeepLAPIKey.Properties.Buttons[AButtonIndex].ImageIndex := 1;
+      MessageDlg(sTranslatorAPIKeyValid, mtInformation, [mbOK], 0);
+    end else
+      MessageDlg(Format(sTranslatorAPIKeyInvalid, [ErrorMessage]), mtWarning, [mbOK], 0);
+
+  finally
+    TranslationProvider := nil;
+  end;
+
+end;
+
+procedure TFormSettings.EditTranslatorDeepLAPIKeyPropertiesChange(Sender: TObject);
+begin
+  // API key no longer validated
+  EditTranslatorDeepLAPIKey.Properties.Buttons[0].ImageIndex := 0;
 end;
 
 // -----------------------------------------------------------------------------
@@ -2074,9 +2118,6 @@ procedure TFormSettings.TextEditTranslatorMSAPIKeyPropertiesButtonClick(Sender: 
 var
   TranslationProvider: ITranslationProviderMicrosoftV3;
   ErrorMessage: string;
-resourcestring
-  sTranslatorMSAPIKeyValid = 'The API key has been validated.';
-  sTranslatorMSAPIKeyInvalid = 'The API key could not be validated:'#13#13'%s';
 begin
   EditTranslatorMSAPIKey.Properties.Buttons[AButtonIndex].ImageIndex := 0;
 
@@ -2086,9 +2127,9 @@ begin
     if (TranslationProvider.ValidateAPIKey(EditTranslatorMSAPIKey.Text, EditTranslatorMSAPIRegion.Text, ErrorMessage)) then
     begin
       EditTranslatorMSAPIKey.Properties.Buttons[AButtonIndex].ImageIndex := 1;
-      MessageDlg(sTranslatorMSAPIKeyValid, mtInformation, [mbOK], 0);
+      MessageDlg(sTranslatorAPIKeyValid, mtInformation, [mbOK], 0);
     end else
-      MessageDlg(Format(sTranslatorMSAPIKeyInvalid, [ErrorMessage]), mtWarning, [mbOK], 0);
+      MessageDlg(Format(sTranslatorAPIKeyInvalid, [ErrorMessage]), mtWarning, [mbOK], 0);
 
   finally
     TranslationProvider := nil;
