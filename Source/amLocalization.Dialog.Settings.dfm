@@ -74,8 +74,8 @@ inherited FormSettings: TFormSettings
     ExplicitWidth = 602
     ExplicitHeight = 501
     object EditTranslatorDeepLAPIKey: TcxButtonEdit [0]
-      Left = 187
-      Top = 581
+      Left = 182
+      Top = 453
       Properties.Buttons = <
         item
           ImageIndex = 0
@@ -88,7 +88,7 @@ inherited FormSettings: TFormSettings
       Style.HotTrack = False
       Style.TransparentBorder = False
       TabOrder = 35
-      Width = 363
+      Width = 368
     end
     object CheckBoxEditUseProposed: TcxCheckBox [1]
       Left = 10000
@@ -452,7 +452,7 @@ inherited FormSettings: TFormSettings
     end
     object CheckBoxTMLoadOnDemand: TcxCheckBox [22]
       Left = 23
-      Top = 107
+      Top = -44
       Hint = 
         'Silently load Translation Memory from disk the first time it is ' +
         'needed.'
@@ -467,7 +467,7 @@ inherited FormSettings: TFormSettings
     end
     object EditTranslatorMSAPIKey: TcxButtonEdit [23]
       Left = 182
-      Top = 435
+      Top = 284
       Properties.Buttons = <
         item
           ImageIndex = 0
@@ -484,7 +484,7 @@ inherited FormSettings: TFormSettings
     end
     object CheckBoxTMBackgroundQuery: TcxCheckBox [24]
       Left = 23
-      Top = 161
+      Top = 10
       Hint = 
         'Search the Translation Memory for matching translations while yo' +
         'u work and indicate if matches are found.'
@@ -499,7 +499,7 @@ inherited FormSettings: TFormSettings
     end
     object CheckBoxTMPromptToSave: TcxCheckBox [25]
       Left = 23
-      Top = 134
+      Top = -17
       Hint = 'Ask before the Translation Memory is saved'
       Caption = 'Prompt to save'
       ParentBackground = False
@@ -512,7 +512,7 @@ inherited FormSettings: TFormSettings
     end
     object SpinEditTranslatorTerminologyMaxResult: TcxSpinEdit [26]
       Left = 182
-      Top = 340
+      Top = 189
       Hint = 'Maximum number of translations to return per term'
       Properties.Alignment.Horz = taRightJustify
       Properties.MaxValue = 20.000000000000000000
@@ -526,7 +526,7 @@ inherited FormSettings: TFormSettings
     end
     object cxCheckBox1: TcxCheckBox [27]
       Left = 23
-      Top = 188
+      Top = 37
       Caption = 'Automatically add new translations:'
       ParentBackground = False
       ParentColor = False
@@ -538,7 +538,7 @@ inherited FormSettings: TFormSettings
     end
     object cxSpinEdit1: TcxSpinEdit [28]
       Left = 182
-      Top = 215
+      Top = 64
       Hint = 'Maximum number of translations to return per term'
       Properties.Alignment.Horz = taRightJustify
       Properties.MaxValue = 20.000000000000000000
@@ -552,7 +552,7 @@ inherited FormSettings: TFormSettings
     end
     object cxSpinEdit2: TcxSpinEdit [29]
       Left = 182
-      Top = 245
+      Top = 94
       Hint = 'Maximum number of translations to return per term'
       Properties.Alignment.Horz = taRightJustify
       Properties.MaxValue = 20.000000000000000000
@@ -566,7 +566,7 @@ inherited FormSettings: TFormSettings
     end
     object EditProviderTMFilename: TcxButtonEdit [30]
       Left = 182
-      Top = 77
+      Top = -74
       Properties.Buttons = <
         item
           Action = ActionProviderTMFilename
@@ -579,7 +579,7 @@ inherited FormSettings: TFormSettings
     end
     object EditTranslatorMSAPIRegion: TcxComboBox [31]
       Left = 182
-      Top = 465
+      Top = 314
       Properties.Items.Strings = (
         'australiaeast'
         'brazilsouth'
@@ -1454,7 +1454,7 @@ inherited FormSettings: TFormSettings
     object LayoutGroupCategoryAppearance: TdxLayoutGroup
       Parent = LayoutGroupCategories
       CaptionOptions.Text = 'Appearance'
-      ItemIndex = 1
+      ItemIndex = 2
       ScrollOptions.Vertical = smIndependent
       Index = 1
     end
@@ -2677,41 +2677,48 @@ inherited FormSettings: TFormSettings
       Parent = LayoutGroupCategoryProviders
       CaptionOptions.Text = 'DeepL'
       ButtonOptions.ShowExpandButton = True
-      ItemIndex = 1
       Index = 3
     end
     object LayoutRadioButtonItemDeepLLicenseFree: TdxLayoutRadioButtonItem
-      Parent = LayoutGroupTranslatorDeepL
+      Parent = dxLayoutGroup2
       Action = ActionProviderDeepLLicenseFree
+      CaptionOptions.Text = 'Free'
       Index = 0
     end
     object LayoutRadioButtonItemDeepLLicensePro: TdxLayoutRadioButtonItem
-      Parent = dxLayoutGroup1
+      Parent = dxLayoutGroup2
       Action = ActionProviderDeepLLicensePro
-      Index = 0
+      CaptionOptions.Text = 'Pro'
+      Index = 1
     end
     object LayoutItemTranslatorDeepLAPIKey: TdxLayoutItem
-      Parent = dxLayoutGroup1
-      AlignHorz = ahClient
+      Parent = LayoutGroupTranslatorDeepL
       CaptionOptions.Text = 'API key:'
       Control = EditTranslatorDeepLAPIKey
       ControlOptions.OriginalHeight = 21
       ControlOptions.OriginalWidth = 314
       ControlOptions.ShowBorder = False
-      Index = 2
+      Index = 1
+    end
+    object dxLayoutLabeledItem3: TdxLayoutLabeledItem
+      Parent = dxLayoutGroup1
+      CaptionOptions.Text = 'API version:'
+      Index = 0
     end
     object dxLayoutGroup1: TdxLayoutGroup
       Parent = LayoutGroupTranslatorDeepL
       CaptionOptions.Text = 'New Group'
+      Hidden = True
+      ItemIndex = 1
       LayoutDirection = ldHorizontal
       ShowBorder = False
-      Index = 1
+      Index = 0
     end
-    object dxLayoutEmptySpaceItem12: TdxLayoutEmptySpaceItem
+    object dxLayoutGroup2: TdxLayoutGroup
       Parent = dxLayoutGroup1
-      SizeOptions.Height = 10
-      SizeOptions.Width = 20
-      CaptionOptions.Text = 'Empty Space Item'
+      CaptionOptions.Text = 'New Group'
+      Hidden = True
+      ShowBorder = False
       Index = 1
     end
   end
@@ -2812,7 +2819,6 @@ inherited FormSettings: TFormSettings
       AutoCheck = True
       Caption = 'Pro version'
       OnExecute = ActionDummyExecute
-      OnUpdate = ActionProviderDeepLLicenseProUpdate
     end
   end
   object PopupMenuFolderReset: TPopupMenu

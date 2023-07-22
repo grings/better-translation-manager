@@ -320,10 +320,11 @@ type
     LayoutRadioButtonItemDeepLLicenseFree: TdxLayoutRadioButtonItem;
     LayoutRadioButtonItemDeepLLicensePro: TdxLayoutRadioButtonItem;
     LayoutItemTranslatorDeepLAPIKey: TdxLayoutItem;
-    dxLayoutGroup1: TdxLayoutGroup;
-    dxLayoutEmptySpaceItem12: TdxLayoutEmptySpaceItem;
     ActionProviderDeepLLicenseFree: TAction;
     ActionProviderDeepLLicensePro: TAction;
+    dxLayoutLabeledItem3: TdxLayoutLabeledItem;
+    dxLayoutGroup1: TdxLayoutGroup;
+    dxLayoutGroup2: TdxLayoutGroup;
     procedure TextEditTranslatorMSAPIKeyPropertiesButtonClick(Sender: TObject; AButtonIndex: Integer);
     procedure TextEditTranslatorMSAPIKeyPropertiesChange(Sender: TObject);
     procedure ActionCategoryExecute(Sender: TObject);
@@ -395,7 +396,6 @@ type
     procedure ImageComboBoxSkinPropertiesChange(Sender: TObject);
     procedure ComboBoxColorSchemePropertiesChange(Sender: TObject);
     procedure PaintBoxColorSamplePaint(Sender: TObject);
-    procedure ActionProviderDeepLLicenseProUpdate(Sender: TObject);
     procedure EditTranslatorDeepLAPIKeyPropertiesButtonClick(Sender: TObject; AButtonIndex: Integer);
     procedure EditTranslatorDeepLAPIKeyPropertiesChange(Sender: TObject);
   private
@@ -1572,11 +1572,6 @@ var
 begin
   Replacement := FSpellCheckerAutoCorrectOptions.Replacements.FindReplacement(EditProofingAutoCorrectReplacementFrom.Text);
   TAction(Sender).Enabled := (EditProofingAutoCorrectReplacementFrom.Text <> '') and (Replacement <> nil) and (not AnsiSameText(Replacement.Replacement, EditProofingAutoCorrectReplacementTo.Text));
-end;
-
-procedure TFormSettings.ActionProviderDeepLLicenseProUpdate(Sender: TObject);
-begin
-  EditTranslatorDeepLAPIKey.Enabled := TAction(Sender).Checked;
 end;
 
 procedure TFormSettings.ActionProviderTMFilenameExecute(Sender: TObject);

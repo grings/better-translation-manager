@@ -115,13 +115,13 @@ begin
 
   // Verify the validity of the input parameters
   if (not ValidateAPIKey(DeepLAPIKey, TranslationManagerSettings.Providers.DeepL.ProVersion, Msg)) then
-    raise Exception.Create(Msg);
+    raise EDeepLLocalizationProvider.Create(Msg);
 
   if not MatchText(ASourceLang, DeepLValidLanguages) then
-    raise Exception.CreateFmt(sDeepLErrorInvalidSourceLang, [ASourceLang]);
+    raise EDeepLLocalizationProvider.CreateFmt(sDeepLErrorInvalidSourceLang, [ASourceLang]);
 
   if not MatchText(ATargetLang, DeepLValidLanguages) then
-    raise Exception.CreateFmt(sDeepLErrorInvalidTargetLang, [ASourceLang]);
+    raise EDeepLLocalizationProvider.CreateFmt(sDeepLErrorInvalidTargetLang, [ASourceLang]);
 
   RequestClient := THTTPClient.Create;
 
@@ -149,7 +149,7 @@ begin
 
     // Checks the possible exceptions on the result
     if (HTTPResponse = nil) then
-      raise Exception.Create(sDeepLErrorUnefinedResponse);
+      raise EDeepLLocalizationProvider.Create(sDeepLErrorUnefinedResponse);
 
     case HTTPResponse.StatusCode of
       200: // Response ok
@@ -157,25 +157,25 @@ begin
           TextResponse := HTTPResponse.ContentAsString(TEncoding.UTF8);
 
           if TextResponse.IsEmpty then
-            raise Exception.Create(sDeepLErrorEmptyResponse);
+            raise EDeepLLocalizationProvider.Create(sDeepLErrorEmptyResponse);
 
           JSONResponse := TJSONObject.ParseJSONValue(TextResponse) as TJSONObject;
 
           if (JSONResponse = nil) then
-            raise Exception.Create(sDeepLErrorInvalidResponse);
+            raise EDeepLLocalizationProvider.Create(sDeepLErrorInvalidResponse);
           try
             JSONResultArray := JSONResponse.GetValue('translations') as TJSONArray;
 
             if (JSONResultArray = nil) then
-              raise Exception.Create(sDeepLErrorInvalidResponse);
+              raise EDeepLLocalizationProvider.Create(sDeepLErrorInvalidResponse);
 
             if (JSONResultArray.Count <> 1) then
-              raise Exception.Create(sDeepLErrorMoreThanOneTranslation);
+              raise EDeepLLocalizationProvider.Create(sDeepLErrorMoreThanOneTranslation);
 
             JSONTranslationItem := JSONResultArray[0] as TJSONObject;
 
             if (JSONTranslationItem = nil) then
-              raise Exception.Create(sDeepLErrorInvalidTranslation);
+              raise EDeepLLocalizationProvider.Create(sDeepLErrorInvalidTranslation);
 
             Result := (JSONTranslationItem.GetValue('text') as TJSONString).Value;
           finally
@@ -184,13 +184,13 @@ begin
         end;
 
       429: // Other responses
-        raise Exception.Create(sDeepLErrorTooManyRequests);
+        raise EDeepLLocalizationProvider.Create(sDeepLErrorTooManyRequests);
 
       403:
-        raise Exception.Create(sDeepLErrorForbidden);
+        raise EDeepLLocalizationProvider.Create(sDeepLErrorForbidden);
 
     else
-      raise Exception.CreateFmt(sDeepLErrorGeneralException, [HTTPResponse.StatusCode.ToString, HTTPResponse.StatusText]);
+      raise EDeepLLocalizationProvider.CreateFmt(sDeepLErrorGeneralException, [HTTPResponse.StatusCode.ToString, HTTPResponse.StatusText]);
     end;
 
   finally
@@ -217,10 +217,7 @@ end;
 
 function TTranslationProviderDeepL.GetDeepLAPIKey: string;
 begin
-  if TranslationManagerSettings.Providers.DeepL.ProVersion then
-    Result := TranslationManagerSettings.Providers.DeepL.APIKey
-  else
-    Result := '';
+  Result := TranslationManagerSettings.Providers.DeepL.APIKey;
 end;
 
 function TTranslationProviderDeepL.GetProviderName: string;
@@ -236,19 +233,13 @@ var
   TranslatedText: string;
 begin
   SourceText := Prop.Value;
-  try
 
-    TranslatedText := TranslateText(SourceLanguage.ISO639_1Name, TargetLanguage.ISO639_1Name, SourceText);
-
-  except
-    on E: Exception do
-      raise EDeepLLocalizationProvider.Create(E.Message)
-  end;
+  TranslatedText := TranslateText(SourceLanguage.ISO639_1Name, TargetLanguage.ISO639_1Name, SourceText);
 
   Result := (TranslatedText <> '');
-  if (Result) then
-    Translations.Add(TranslatedText);
 
+  if (Result) then
+    Translations.Text := TranslatedText;
 end;
 
 var
