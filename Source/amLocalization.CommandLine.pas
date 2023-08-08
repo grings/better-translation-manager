@@ -54,6 +54,7 @@ type
     class function OptionSource(var Filename: string): boolean;
     class function OptionOutput(var Filename: string): boolean;
     class function OptionSymbols(var Filename: string): boolean;
+    class function OptionPEStub(var Filename: string): boolean;
     class function OptionHelp: boolean;
     class function OptionVerbose: boolean;
     class function OptionIncludeVersionInfo: boolean;
@@ -80,6 +81,7 @@ resourcestring
     '  -s:<source file>   Specify source file'+#13+
     '  -y:<symbol file>   Specify string symbols file'+#13+
     '  -o:<output folder> Specify resource module output folder'+#13+
+    '  -x:<stub file>     Specify PE stub file'+#13+
     '  -v                 Display verbose messages'+#13+
     '  -i                 Include version info resource from source'+#13+
     '  -n:<scheme>        File name scheme:'+#13+
@@ -209,6 +211,19 @@ begin
   end;
 end;
 
+class function TLocalizationCommandLineTool.OptionPEStub(var Filename: string): boolean;
+begin
+  Result := False;
+  var Value := '';
+  if (FindCmdLineSwitch('stub', Value, True, [clstValueAppended]) or FindCmdLineSwitch('x', Value, True, [clstValueAppended])) and
+    (Value <> '') then
+  begin
+    // If command line specified a relative path then it must be relative to the "application folder"
+    Filename := TPath.Combine(TPath.GetDirectoryName(ParamStr(0)), Value);
+    Result := True;
+  end;
+end;
+
 class function TLocalizationCommandLineTool.OptionVerbose: boolean;
 begin
   Result := (FindCmdLineSwitch('verbose')) or (FindCmdLineSwitch('v'));
@@ -289,6 +304,15 @@ begin
   end;
   if (not TDirectory.Exists(FOutputFolder)) then
     Warning(Format('Output folder does not exist: %s', [FOutputFolder]));
+
+  if (OptionPEStub(sResourceModuleStub)) then
+  begin
+    if (FVerbose) then
+      Message(Format('Custom PE stub: %s', [sResourceModuleStub]));
+
+    if (not TFile.Exists(sResourceModuleStub)) then
+      Warning(Format('Custom PE stub file does not exist: %s', [sResourceModuleStub]));
+  end;
 
 
   if (OptionBuild) then

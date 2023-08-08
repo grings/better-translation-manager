@@ -72,6 +72,9 @@ type
     procedure CopyVersionInfo(Stream: TMemoryStream);
   end;
 
+var
+  sResourceModuleStub: string = 'EmptyResourceModule.dll';
+
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -87,7 +90,6 @@ uses
   Controls;
 
 const
-  sResourceModuleStub = 'EmptyResourceModule.dll';
   sResourceModuleStubRes = 'EmptyResourceModule'; // Name of above file as an embedded resource
 
   // The following is the content of the file specified by the sResourceModuleStub constant.
