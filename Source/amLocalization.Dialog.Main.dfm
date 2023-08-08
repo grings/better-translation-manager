@@ -98,6 +98,10 @@ object FormMain: TFormMain
           ToolbarName = 'BarManagerBarExport'
         end
         item
+          Caption = 'Settings'
+          ToolbarName = 'BarManagerBarSettings'
+        end
+        item
           ToolbarName = 'BarManagerBarIntegration'
         end>
       Index = 3
@@ -899,6 +903,10 @@ object FormMain: TFormMain
         item
           Visible = True
           ItemName = 'BarButtonSaveProject'
+        end
+        item
+          Visible = True
+          ItemName = 'BarButtonSaveProjectAs'
         end>
       OneOnRow = False
       Row = 0
@@ -973,7 +981,7 @@ object FormMain: TFormMain
           ItemName = 'dxBarSubItem1'
         end>
       OneOnRow = False
-      Row = 0
+      Row = 1
       UseOwnFont = False
       Visible = True
       WholeRow = False
@@ -1227,7 +1235,7 @@ object FormMain: TFormMain
           ItemName = 'dxBarButton20'
         end>
       OneOnRow = False
-      Row = 0
+      Row = 1
       UseOwnFont = False
       Visible = True
       WholeRow = False
@@ -1273,7 +1281,7 @@ object FormMain: TFormMain
       ItemLinks = <
         item
           Visible = True
-          ItemName = 'dxBarButton34'
+          ItemName = 'ButtonSettings'
         end
         item
           Visible = True
@@ -1343,7 +1351,7 @@ object FormMain: TFormMain
     object BarManagerBarIntegration: TdxBar
       Caption = 'Integration'
       CaptionButtons = <>
-      DockedLeft = 433
+      DockedLeft = 490
       DockedTop = 0
       FloatLeft = 992
       FloatTop = 2
@@ -1355,6 +1363,26 @@ object FormMain: TFormMain
           ItemName = 'dxBarButton23'
         end>
       OneOnRow = False
+      Row = 1
+      UseOwnFont = False
+      Visible = True
+      WholeRow = False
+    end
+    object BarManagerBarSettings: TdxBar
+      Caption = 'Custom 1'
+      CaptionButtons = <>
+      DockedLeft = 425
+      DockedTop = 0
+      FloatLeft = 1088
+      FloatTop = 2
+      FloatClientWidth = 0
+      FloatClientHeight = 0
+      ItemLinks = <
+        item
+          Visible = True
+          ItemName = 'ButtonSettings'
+        end>
+      OneOnRow = True
       Row = 0
       UseOwnFont = False
       Visible = True
@@ -1679,10 +1707,6 @@ object FormMain: TFormMain
       Category = 0
       Visible = ivNotInCustomizing
     end
-    object dxBarButton34: TdxBarButton
-      Action = ActionSettings
-      Category = 0
-    end
     object BarButtonFeedbackPositive: TdxBarButton
       Action = ActionFeedbackPositive
       Category = 0
@@ -1851,6 +1875,17 @@ object FormMain: TFormMain
       Category = 0
       ButtonStyle = bsChecked
     end
+    object BarButtonSaveProjectAs: TdxBarButton
+      Action = ActionProjectSaveAs
+      Category = 0
+    end
+    object ButtonSettings: TdxBarLargeButton
+      Action = ActionSettings
+      Category = 0
+      LargeImageIndex = 12
+      SyncImageIndex = False
+      ImageIndex = 52
+    end
   end
   object OpenDialogXLIFF: TOpenDialog
     Filter = 
@@ -1884,6 +1919,24 @@ object FormMain: TFormMain
       ShortCut = 16463
       OnExecute = ActionProjectOpenExecute
     end
+    object ActionProjectSave: TAction
+      Category = 'File'
+      Caption = 'Save'
+      Hint = 'Save the current translation project'
+      ImageIndex = 2
+      ShortCut = 16467
+      OnExecute = ActionProjectSaveExecute
+      OnUpdate = ActionProjectSaveUpdate
+    end
+    object ActionProjectSaveAs: TAction
+      Category = 'File'
+      Caption = 'Save as...'
+      Hint = 'Save the current translation project to a new file'
+      ImageIndex = 2
+      ShortCut = 24659
+      OnExecute = ActionProjectSaveAsExecute
+      OnUpdate = ActionProjectSaveAsUpdate
+    end
     object ActionProofingCheckSelected: TAction
       Category = 'Validation'
       Caption = 'Check selected'
@@ -1900,15 +1953,6 @@ object FormMain: TFormMain
       ImageIndex = 1
       ShortCut = 24654
       OnExecute = ActionProjectNewExecute
-    end
-    object ActionProjectSave: TAction
-      Category = 'File'
-      Caption = 'Save...'
-      Hint = 'Save the current translation project'
-      ImageIndex = 2
-      ShortCut = 16467
-      OnExecute = ActionProjectSaveExecute
-      OnUpdate = ActionProjectSaveUpdate
     end
     object ActionProjectUpdate: TAction
       Category = 'Project'
