@@ -202,11 +202,22 @@ type
     property BackgroundQuery: boolean read FBackgroundQuery write FBackgroundQuery default True;
   end;
 
+  TTranslationManagerProviderDeepLSettings = class(TConfigurationSection)
+  private
+    FAPIKey: string;
+    FProVersion: boolean;
+  public
+  published
+    property APIKey: string read FAPIKey write FAPIKey;
+    property ProVersion: boolean read FProVersion write FProVersion;
+  end;
+
   TTranslationManagerProviderSettings = class(TConfigurationSection)
   private
     FMicrosoftV3: TTranslationManagerProviderMicrosoftTranslatorV3Settings;
     FTranslationMemory: TTranslationManagerProviderTM;
     FMicrosoftTerminology: TTranslationManagerProviderMicrosoftTerminologySettings;
+    FDeepL: TTranslationManagerProviderDeepLSettings;
   public
     constructor Create(AOwner: TConfigurationSection); override;
     destructor Destroy; override;
@@ -215,6 +226,7 @@ type
     property MicrosoftTranslatorV3: TTranslationManagerProviderMicrosoftTranslatorV3Settings read FMicrosoftV3;
     property MicrosoftTerminology: TTranslationManagerProviderMicrosoftTerminologySettings read FMicrosoftTerminology;
     property TranslationMemory: TTranslationManagerProviderTM read FTranslationMemory;
+    property DeepL: TTranslationManagerProviderDeepLSettings read FDeepL;
   end;
 
   TTranslationManagerProofingSettings = class(TConfigurationSection)
@@ -949,10 +961,12 @@ begin
   FMicrosoftV3 := TTranslationManagerProviderMicrosoftTranslatorV3Settings.Create(Self);
   FMicrosoftTerminology := TTranslationManagerProviderMicrosoftTerminologySettings.Create(Self);
   FTranslationMemory := TTranslationManagerProviderTM.Create(Self);
+  FDeepL := TTranslationManagerProviderDeepLSettings.Create(Self);
 end;
 
 destructor TTranslationManagerProviderSettings.Destroy;
 begin
+  FDeepL.Free;
   FMicrosoftV3.Free;
   FMicrosoftTerminology.Free;
   FTranslationMemory.Free;
