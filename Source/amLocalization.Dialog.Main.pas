@@ -4340,22 +4340,22 @@ resourcestring
   sPurgeUnusedTranslationsTitle = 'Purge unused translations';
   sPurgeUnusedTranslationsNone = 'No modules or translations are marked as unused.'#13#13+
     'Nothing to purge';
-  sPurgeUnusedTranslations = '%.0n modules and %.0n translations are marked as unused.'#13+
+  sPurgeUnusedTranslations = '%.0n modules, %.0n items, %.0n properties, and %.0n translations are marked as unused.'#13+
     'This is likely because units or components were deleted, moved or renamed since the previous update.'#13#13+
-    'Do you want to delete all unused modules and translations?';
+    'Do you want to delete all unused entities?';
   sPurgeUnusedStatusTitle = 'Purge completed';
   sPurgeUnusedStatus = 'The following was removed from the project:'#13#13+
     'Modules: %.0n'#13'Items: %.0n'#13'Properties: %.0n';
 begin
   CountBefore := CountStuff;
 
-  if (CountBefore.UnusedModule = 0) and (CountBefore.UnusedTranslation = 0) then
+  if (CountBefore.UnusedModule = 0) and (CountBefore.UnusedItem = 0) and (CountBefore.UnusedProperty = 0) then
   begin
     TaskMessageDlg(sPurgeUnusedTranslationsTitle, sPurgeUnusedTranslationsNone, mtInformation, [mbOK], 0);
     Exit;
   end;
 
-  if (TaskMessageDlg(sPurgeUnusedTranslationsTitle, Format(sPurgeUnusedTranslations, [1.0*CountBefore.UnusedModule, 1.0*CountBefore.UnusedTranslation]), mtConfirmation, [mbYes, mbNo], 0, mbNo) <> mrYes) then
+  if (TaskMessageDlg(sPurgeUnusedTranslationsTitle, Format(sPurgeUnusedTranslations, [1.0*CountBefore.UnusedModule, 1.0*CountBefore.UnusedItem, 1.0*CountBefore.UnusedProperty, 1.0*CountBefore.UnusedTranslation]), mtConfirmation, [mbYes, mbNo], 0, mbNo) <> mrYes) then
     Exit;
 
   SaveCursor(crHourGlass);
