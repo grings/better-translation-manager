@@ -5835,7 +5835,7 @@ end;
 
 function TFormMain.SaveProject(PromptForFilename: boolean): boolean;
 var
-  ProjectFilename, SourceFilename, SymbolFilename: string;
+  NewProjectFilename, SourceFilename, SymbolFilename: string;
   SaveSourceFilename, SaveSymbolFilename: string;
   Progress: IProgress;
 resourcestring
@@ -5877,21 +5877,22 @@ begin
     if (not SaveDialogProject.Execute(Handle)) then
       Exit;
 
-    ProjectFilename := SaveDialogProject.FileName;
-  end;
+    NewProjectFilename := SaveDialogProject.FileName;
+  end else
+    NewProjectFilename := FProjectFilename;
 
   Progress := ShowProgress(sProgressProjectSaving);
   try
     Progress.Marquee := True;
 
     // Save relative paths in project
-    FProject.SourceFilename := PathUtil.FilenameMakeRelative(TPath.GetDirectoryName(ProjectFilename), SourceFilename);
+    FProject.SourceFilename := PathUtil.FilenameMakeRelative(TPath.GetDirectoryName(NewProjectFilename), SourceFilename);
     FProject.StringSymbolFilename := PathUtil.FilenameMakeRelative(TPath.GetDirectoryName(SourceFilename), SymbolFilename);
 
     try
       Notify(tmaProjectSaving);
 
-      if (not SafeReplaceFile(ProjectFilename,
+      if (not SafeReplaceFile(NewProjectFilename,
         function(const Filename: string): boolean
         begin
           var Options: TLocalizationSaveOptions := [];
@@ -5920,7 +5921,7 @@ begin
       raise;
     end;
 
-    FProjectFilename := ProjectFilename;
+    FProjectFilename := NewProjectFilename;
 
     // Make paths absolute again
     FProject.SourceFilename := PathUtil.PathCombinePath(TPath.GetDirectoryName(FProjectFilename), FProject.SourceFilename);
@@ -5935,7 +5936,7 @@ begin
     Progress := nil;
   end;
 
-  AddRecentFile(ProjectFilename);
+  AddRecentFile(NewProjectFilename);
 
   Result := True;
 end;
