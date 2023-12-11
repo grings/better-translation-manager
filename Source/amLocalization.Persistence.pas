@@ -519,7 +519,9 @@ class procedure TLocalizationProjectFiler.SaveToStream(Project: TLocalizerProjec
         s := s + ',';
       s := s + sItemState[State];
     end;
-    Node.Attributes['state'] := s;
+
+    if (s <> '') then
+      Node.Attributes['state'] := s;
   end;
 
   procedure WriteItemStatus(const Node: IXMLNode; ItemStatus: TLocalizerItemStatus); overload;
