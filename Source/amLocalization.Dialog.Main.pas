@@ -3057,10 +3057,10 @@ begin
   // If we are posting because the focus has moved to another module, then we will not find
   // the property in the data source and will have to update it directly.
   if (RecordIndex <> -1) then
-    GridItemsTableView.DataController.Values[RecordIndex, GridItemsTableViewColumnTarget.Index] := EditTargetText.Lines.Text
+    GridItemsTableView.DataController.Values[RecordIndex, GridItemsTableViewColumnTarget.Index] := EditTargetText.Text
   else
   begin
-    FTextEditProperty.TranslatedValue[TranslationLanguage] := EditTargetText.Lines.Text;
+    FTextEditProperty.TranslatedValue[TranslationLanguage] := EditTargetText.Text;
     TranslationAdded(FTextEditProperty);
   end;
 end;
