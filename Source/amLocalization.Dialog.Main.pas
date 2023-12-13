@@ -516,6 +516,7 @@ type
       ARowIndexList: TdxScrollbarAnnotationRowIndexList);
     procedure ActionProjectSaveAsExecute(Sender: TObject);
     procedure ActionProjectSaveAsUpdate(Sender: TObject);
+    procedure GridItemsTableViewMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
   private
     FProject: TLocalizerProject;
     FProjectFilename: string;
@@ -814,6 +815,7 @@ uses
 
   amLocalization.System.Restart,
   amLocalization.Utils,
+  amLocalization.Utils.AutoGroupByBox,
   amLocalization.Engine,
   amLocalization.ResourceWriter,
   amLocalization.Persistence,
@@ -1075,6 +1077,8 @@ begin
 
   FModuleItemsDataSource := TLocalizerModuleItemsDataSource.Create(nil);
   GridItemsTableView.DataController.CustomDataSource := FModuleItemsDataSource;
+  // Display/Hide group box
+  GroupByBoxAutoDisplay.Update(GridItemsTableView);
 
   FTranslationMemory := TranslationMemory.PrimaryProvider;
 
@@ -6773,6 +6777,10 @@ var
 begin
   p := Point(X, Y);
 
+  // Display/Hide group box
+  if (ssLeft in Shift) then
+    GroupByBoxAutoDisplay.MouseMoveHandler(Sender as TcxGridSite);
+
   // Hide current hint if we've moved out of the hint rect
   if (FHintVisible) or (GridItemsTableView.Controller.IsEditing) then
   begin
@@ -6832,6 +6840,13 @@ begin
   TimerHint.Enabled := False;
   TimerHint.Interval := HintStyleController.HintPause;
   TimerHint.Enabled := True;
+end;
+
+procedure TFormMain.GridItemsTableViewMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  // Display/Hide group box
+  if (Button = mbLeft) then
+    GroupByBoxAutoDisplay.MouseUpHandler(Sender as TcxGridSite);
 end;
 
 procedure TFormMain.GridItemsTableViewPopulateCustomScrollbarAnnotationRowIndexList(

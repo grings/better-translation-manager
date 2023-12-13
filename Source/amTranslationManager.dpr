@@ -87,7 +87,8 @@ uses
   amLocalization.TranslationMemory.Data.API in 'amLocalization.TranslationMemory.Data.API.pas',
   amLocalization.Integration.Tracker.API in 'amLocalization.Integration.Tracker.API.pas',
   amLocalization.Integration.Tracker in 'amLocalization.Integration.Tracker.pas',
-  amLocalization.Application.API in 'amLocalization.Application.API.pas';
+  amLocalization.Application.API in 'amLocalization.Application.API.pas',
+  amLocalization.Utils.AutoGroupByBox in 'amLocalization.Utils.AutoGroupByBox.pas';
 
 {$R *.res}
 

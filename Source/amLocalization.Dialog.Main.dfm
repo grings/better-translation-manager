@@ -325,6 +325,7 @@ object FormMain: TFormMain
         PopupMenu = PopupMenuTree
         OnMouseDown = GridItemsTableViewMouseDown
         OnMouseMove = GridItemsTableViewMouseMove
+        OnMouseUp = GridItemsTableViewMouseUp
         Navigator.Buttons.CustomButtons = <>
         ScrollbarAnnotations.CustomAnnotations = <
           item
@@ -363,11 +364,12 @@ object FormMain: TFormMain
         OptionsBehavior.FocusCellOnTab = True
         OptionsBehavior.IncSearch = True
         OptionsBehavior.IncSearchItem = GridItemsTableViewColumnItemName
+        OptionsBehavior.FixedGroups = True
         OptionsBehavior.FocusCellOnCycle = True
         OptionsBehavior.ImmediateEditor = False
         OptionsBehavior.RecordScrollMode = rsmByPixel
-        OptionsCustomize.ColumnGrouping = False
         OptionsCustomize.ColumnHiding = True
+        OptionsCustomize.ColumnHidingOnGrouping = False
         OptionsCustomize.ColumnsQuickCustomization = True
         OptionsCustomize.ColumnsQuickCustomizationShowCommands = False
         OptionsData.Deleting = False
@@ -378,6 +380,7 @@ object FormMain: TFormMain
         OptionsView.GridLineColor = 16050401
         OptionsView.GridLines = glHorizontal
         OptionsView.GroupByBox = False
+        OptionsView.GroupByHeaderLayout = ghlHorizontal
         OptionsView.Indicator = True
         OptionsView.IndicatorWidth = 50
         Styles.Content = DataModuleMain.StyleDefault
@@ -392,8 +395,7 @@ object FormMain: TFormMain
           OnGetCellHint = GridItemsTableViewColumnGetCellHint
           Options.Editing = False
           Options.FilteringAddValueItems = False
-          SortIndex = 0
-          SortOrder = soAscending
+          Options.Grouping = False
           VisibleForEditForm = bFalse
           Width = 198
         end
@@ -425,6 +427,7 @@ object FormMain: TFormMain
           Options.Editing = False
           Options.Focusing = False
           Options.FilteringAddValueItems = False
+          Options.Grouping = False
           VisibleForEditForm = bFalse
           Width = 100
         end
@@ -470,6 +473,7 @@ object FormMain: TFormMain
           OnGetCellHint = GridItemsTableViewColumnGetCellHint
           Options.Editing = False
           Options.FilteringAddValueItems = False
+          Options.Grouping = False
           Width = 120
         end
         object GridItemsTableViewColumnTarget: TcxGridColumn
@@ -497,6 +501,7 @@ object FormMain: TFormMain
           OnGetCellHint = GridItemsTableViewColumnGetCellHint
           OnValidateDrawValue = GridItemsTableViewColumnTargetValidateDrawValue
           Options.FilteringAddValueItems = False
+          Options.Grouping = False
           Width = 120
         end
       end
