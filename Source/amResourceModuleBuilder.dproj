@@ -1,7 +1,7 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{AEE2318E-D69F-4129-A284-D37E6FEFF4BC}</ProjectGuid>
-        <ProjectVersion>19.5</ProjectVersion>
+        <ProjectVersion>20.1</ProjectVersion>
         <FrameworkType>None</FrameworkType>
         <MainSource>amResourceModuleBuilder.dpr</MainSource>
         <Base>True</Base>

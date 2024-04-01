@@ -1,7 +1,7 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{37DFBCD3-209C-472F-B667-74407DBC7456}</ProjectGuid>
-        <ProjectVersion>19.5</ProjectVersion>
+        <ProjectVersion>20.1</ProjectVersion>
         <FrameworkType>VCL</FrameworkType>
         <MainSource>amTranslationManager.dpr</MainSource>
         <Base>True</Base>
@@ -87,16 +87,14 @@
         <BT_BuildType>Debug</BT_BuildType>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <Icon_MainIcon>resources\amTranslationManager.ico</Icon_MainIcon>
-        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
-        <AppDPIAwarenessMode>unaware</AppDPIAwarenessMode>
+        <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
         <DCC_UsePackage>DBXSqliteDriver;dxCoreRS25;dxSpreadSheetCoreDialogsRS25;DBXInterBaseDriver;dxRichEditControlCoreRS25;vclactnband;dxRibbonCustomizationFormRS25;vclFireDAC;cxExportRS25;dxPSPrVwRibbonRS25;cxSchedulerTreeBrowserRS25;dxSpreadSheetInplaceRichEditRS25;dxHttpIndyRequestRS25;tethering;dxPScxCommonRS25;HMT_SKINRS25;FireDACADSDriver;BasicUtilsD10Tokyo;cxPivotGridOLAPRS25;IFxEditorsD10Tokyo;dxPSdxFCLnkRS25;dxRichEditCoreRS25;cxSchedulerGridRS25;vcltouch;vcldb;inetdb;dxGaugeControlRS25;cxLibraryRS25;fmx;fmxdae;dxPScxPivotGridLnkRS25;dxBarDBNavRS25;dxTabbedMDIRS25;IFX_MetropolisRS25;dxFlowChartAdvancedCustomizeFormRS25;HRS_SkinRS25;dbexpress;IndyCore;dxFlowChartRS25;vclx;dxRichEditDocumentModelRS25;dsnap;dxBarRS25;dxSpreadSheetConditionalFormattingDialogsRS25;dxTileControlRS25;dxdborRS25;dxMapControlRS25;dxPDFViewerRS25;dxDockingRS25;VCLRESTComponents;dxPScxExtCommonRS25;cxPivotGridRS25;dxPSLnksRS25;dxWizardControlRS25;dxSpreadSheetReportDesignerRS25;dxNavBarRS25;dxRichEditControlRS25;dxPSdxSpreadSheetLnkRS25;vclie;cxSchedulerRibbonStyleEventEditorRS25;bindengine;DBXMySQLDriver;dxFireDACServerModeRS25;FireDACMySQLDriver;FireDACCommonODBC;cxTreeListRS25;dxPSdxPDFViewerLnkRS25;IFX_OptimizerBlueRS25;IndyIPCommon;dxPSdxLCLnkRS25;vcl;IndyIPServer;dxPScxVGridLnkRS25;dxBarExtItemsRS25;IndySystem;dxComnRS25;dxSkinsCoreRS25;dxPSdxDBTVLnkRS25;dsnapcon;dxPSRichEditControlLnkRS25;FireDACMSAccDriver;fmxFireDAC;vclimg;dxSpreadSheetCoreRS25;dxServerModeRS25;dxPScxPCProdRS25;dxdbtrRS25;dxSpreadSheetRS25;dxPScxTLLnkRS25;Skin_Horizon_PlannerRS25;FireDACPgDriver;IFXTrafficLightD10Tokyo;dxPScxSchedulerLnkRS25;cxGridRS25;dxSpreadSheetCoreConditionalFormattingDialogsRS25;DbxCommonDriver;dxorgcRS25;dxCloudServiceLibraryRS25;Skin_Horizon_dagkalkyleRS25;xmlrtl;dxPsPrVwAdvRS25;fmxobj;vclwinx;dxPScxGridLnkRS25;rtl;DbxClientDriver;dxRichEditInplaceRS25;cxTreeListdxBarPopupMenuRS25;dxPSCoreRS25;CustomIPTransport;vcldsnap;dxmdsRS25;cxSchedulerWebServiceStorageRS25;dxPSdxOCLnkRS25;HorizonMT_AltRS25;appanalytics;cxPivotGridChartRS25;IndyIPClient;dxBarExtDBItemsRS25;cxSchedulerRS25;SynEdit_R;dxDBXServerModeRS25;dxGDIPlusRS25;dxPSdxGaugeControlLnkRS25;dbxcds;VclSmp;adortl;dxPSdxDBOCLnkRS25;dxRibbonRS25;dsnapxml;dxSpellCheckerRS25;dbrtl;IndyProtocols;inetdbxpress;cxVerticalGridRS25;dxtrmdRS25;dxFlowChartDesignerRS25;dxADOServerModeRS25;dxPSdxMapControlLnkRS25;fmxase;$(DCC_UsePackage)</DCC_UsePackage>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
-        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
-        <AppDPIAwarenessMode>unaware</AppDPIAwarenessMode>
+        <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
         <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
@@ -107,17 +105,16 @@
         <DCC_RemoteDebug>true</DCC_RemoteDebug>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
-        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
         <DCC_MapFile>3</DCC_MapFile>
         <VerInfo_PreRelease>true</VerInfo_PreRelease>
         <Icon_MainIcon>resources\amTranslationManager.ico</Icon_MainIcon>
         <DCC_Define>madExcept;$(DCC_Define)</DCC_Define>
         <VerInfo_Debug>true</VerInfo_Debug>
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
+        <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
         <DCC_DebugInfoInExe>false</DCC_DebugInfoInExe>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
-        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
         <AppEnableHighDPI>true</AppEnableHighDPI>
         <DCC_Define>madExcept;$(DCC_Define)</DCC_Define>
         <DCC_MapFile>3</DCC_MapFile>
@@ -129,7 +126,6 @@
         <DCC_DebugInformation>0</DCC_DebugInformation>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
-        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
         <Icon_MainIcon>resources\amTranslationManager.ico</Icon_MainIcon>
         <DCC_Define>madExcept;$(DCC_Define)</DCC_Define>
         <DCC_MapFile>3</DCC_MapFile>
@@ -138,7 +134,6 @@
         <PostBuildEvent><![CDATA[]]></PostBuildEvent>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
-        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
         <AppEnableHighDPI>true</AppEnableHighDPI>
         <DCC_Define>madExcept;$(DCC_Define)</DCC_Define>
         <DCC_MapFile>3</DCC_MapFile>
