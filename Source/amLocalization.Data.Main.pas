@@ -139,6 +139,8 @@ type
 
     procedure GetContentStyle(Active, Focused, Selected, Editing: boolean; TranslationLanguage: TTranslationLanguage; Prop: TLocalizerProperty; var AStyle: TcxStyle);
 
+    procedure FontSizeChanged(Size: Integer);
+
     // Skin & Color scheme
     property ColorTheme: TColorTheme read GetColorTheme write SetColorTheme;
     property SkinName: string read GetSkinName;
@@ -324,6 +326,14 @@ begin
   for var i := 0 to LayoutLookAndFeelList.Count-1 do
     if (not TdxCustomLayoutLookAndFeel(LayoutLookAndFeelList.Items[i]).ItemOptions.CaptionOptions.UseDefaultFont) then
       TdxCustomLayoutLookAndFeel(LayoutLookAndFeelList.Items[i]).ItemOptions.CaptionOptions.Font.Name := Application.DefaultFont.Name;
+end;
+
+procedure TDataModuleMain.FontSizeChanged(Size: Integer);
+begin
+  // TODO : Does not appear to be necessary anymore
+  for var i := 0 to StyleRepository.Count-1 do
+    if (TcxStyleValue.svFont in TcxStyle(StyleRepository.Items[i]).AssignedValues) then
+      TcxStyle(StyleRepository.Items[i]).Font.Size := Size;
 end;
 
 type

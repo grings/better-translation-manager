@@ -160,6 +160,7 @@ end;
 
 procedure InitializeFonts;
 begin
+{$if (CompilerVersion < 35.0) } // Segoe UI is default in Delphi 11+
   if (CheckWin32Version(6, 0)) then
   begin
     // Application.DefaultFont is the font used when TForm.ParentFont=True.
@@ -171,6 +172,7 @@ begin
     // For now we leave it as is (Tahoma). At some point it should follow the system default like above:
     // DefFontData.Name := Screen.MessageFont.Name;
   end;
+{$ifend}
 end;
 
 procedure DoAcquireRestartSemaphore;

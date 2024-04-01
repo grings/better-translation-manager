@@ -12,12 +12,15 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, cxGraphics, cxControls, cxLookAndFeels, cxLookAndFeelPainters, dxSkinsCore, Vcl.Menus,
-  dxLayoutControlAdapters, dxLayoutContainer, cxClasses, Vcl.StdCtrls, cxButtons, dxLayoutControl, System.Actions, Vcl.ActnList,
-  cxContainer, cxEdit, cxGroupBox, Vcl.ExtCtrls, dxLayoutcxEditAdapters, cxLabel;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Menus, Vcl.StdCtrls, System.Actions, Vcl.ActnList,
+  Vcl.ExtCtrls,
+  cxGraphics, cxControls, cxLookAndFeels, cxLookAndFeelPainters, dxSkinsCore,
+  dxLayoutControlAdapters, dxLayoutContainer, cxClasses, cxButtons, dxLayoutControl,
+  cxContainer, cxEdit, cxGroupBox, dxLayoutcxEditAdapters, cxLabel,
+  dxForms;
 
 type
-  TFormDialog = class abstract(TForm)
+  TFormDialog = class abstract(TdxForm)
     ActionList: TActionList;
     ActionOK: TAction;
     ActionCancel: TAction;
