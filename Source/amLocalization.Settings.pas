@@ -487,7 +487,7 @@ type
   published
     property SaveDontTranslate: boolean read FSaveDontTranslate write FSaveDontTranslate default True;
     property SaveNewState: boolean read FSaveNewState write FSaveNewState default False;
-    property SaveSorted: boolean read FSaveSorted write FSaveSorted default False;
+    property SaveSorted: boolean read FSaveSorted write FSaveSorted default True;
   end;
 
 type
