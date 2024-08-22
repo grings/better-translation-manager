@@ -349,6 +349,10 @@ type
     ActionProjectSaveAs: TAction;
     BarManagerBarSettings: TdxBar;
     ButtonSettings: TdxBarLargeButton;
+    ActionPurgeSelected: TAction;
+    BarButtonPurgeSelected: TdxBarButton;
+    BarButtonPurge: TdxBarSubItem;
+    ActionPurge: TAction;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure ActionProjectUpdateExecute(Sender: TObject);
@@ -394,7 +398,7 @@ type
     procedure SpellCheckerCheckStart(Sender: TdxCustomSpellChecker; AControl: TWinControl; var AAllow: Boolean);
     procedure ActionImportFileSourceExecute(Sender: TObject);
     procedure ActionImportFileTargetExecute(Sender: TObject);
-    procedure TreeListModulesGetNodeImageIndex(Sender: TcxCustomTreeList; ANode: TcxTreeListNode; AIndexType: TcxTreeListImageIndexType; var AIndex: TcxImageIndex);
+    procedure TreeListModulesGetNodeImageIndex(Sender: TcxCustomTreeList; ANode: TcxTreeListNode; AIndexType: TcxTreeListImageIndexType; var AIndex: TImageIndex);
     procedure ActionAutomationTranslateExecute(Sender: TObject);
     procedure ActionAutomationTranslateUpdate(Sender: TObject);
     procedure ActionFindNextExecute(Sender: TObject);
@@ -475,7 +479,7 @@ type
       ACellViewInfo: TcxGridTableDataCellViewInfo; const AMousePos: TPoint; var AHintText: TCaption; var AIsHintMultiLine: Boolean;
       var AHintTextRect: TRect);
     procedure GridItemsTableViewColumnTargetValidateDrawValue(Sender: TcxCustomGridTableItem; ARecord: TcxCustomGridRecord;
-      const AValue: TcxEditValue; AData: TcxEditValidateInfo);
+      const AValue: Variant; AData: TcxEditValidateInfo);
     procedure GridItemsTableViewMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure GridItemsTableViewMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure GridItemsTableViewFocusedRecordChanged(Sender: TcxCustomGridTableView; APrevFocusedRecord,
@@ -517,6 +521,8 @@ type
     procedure ActionProjectSaveAsExecute(Sender: TObject);
     procedure ActionProjectSaveAsUpdate(Sender: TObject);
     procedure GridItemsTableViewMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure ActionPurgeSelectedExecute(Sender: TObject);
+    procedure ActionPurgeSelectedUpdate(Sender: TObject);
   private
     FProject: TLocalizerProject;
     FProjectFilename: string;
@@ -877,6 +883,13 @@ resourcestring
   sRecoverUnusedStatusTitle = 'Recover completed';
   sRecoverUnusedStatus = '%d of %d unused translations were recovered.';
   sRecoverUnusedStatusNone = 'No translations recovered.';
+
+resourcestring
+  sPurgeZombieItemsCaption = 'Purge unused items';
+  sPurgeOnlyUntranslatedZombieItems = 'Only items without translations';
+  sPurgeZombieItemsStatusTitle = 'Purge completed';
+  sPurgeZombieItemsStatus = 'The following was removed from the project:'#13#13+
+    'Modules: %.0n'#13'Items: %.0n'#13'Properties: %.0n';
 
 resourcestring
   sDone = 'Done!';
@@ -4399,163 +4412,95 @@ begin
 end;
 
 procedure TFormMain.ActionProjectPurgeExecute(Sender: TObject);
-var
-  CurrentModule: TLocalizerModule;
-  Module, LoopModule: TLocalizerModule;
-  Item, LoopItem: TLocalizerItem;
-  Prop: TLocalizerProperty;
-  NeedReload: boolean;
-  CountBefore, CountAfter: TCounts;
-  Node: TcxTreeListNode;
-  Msg: string;
 resourcestring
-  sPurgeUnusedTranslationsTitle = 'Purge unused translations';
-  sPurgeUnusedTranslationsNone = 'No modules or translations are marked as unused.'#13#13+
+  sPurgeZombieItemsTitle = 'Purge all unused items';
+  sPurgeZombieItemsNone = 'No modules or items are marked as unused.'#13#13+
     'Nothing to purge';
-  sPurgeUnusedTranslations = '%.0n modules, %.0n items, %.0n properties, and %.0n translations are marked as unused.'#13+
-    'This is likely because units or components were deleted, moved or renamed since the previous update.'#13#13+
+  sPurgeZombieItems = '%.0n modules, %.0n items, %.0n properties, and %.0n translations are marked as unused.'#13+
+    'This is likely because units or components were deleted, moved, or renamed since the previous update.'#13#13+
     'Do you want to delete all unused entities?';
-  sPurgeUnusedStatusTitle = 'Purge completed';
-  sPurgeUnusedStatus = 'The following was removed from the project:'#13#13+
-    'Modules: %.0n'#13'Items: %.0n'#13'Properties: %.0n';
 begin
-  CountBefore := CountStuff;
+  var CountBefore := CountStuff;
 
   if (CountBefore.UnusedModule = 0) and (CountBefore.UnusedItem = 0) and (CountBefore.UnusedProperty = 0) then
   begin
-    TaskMessageDlg(sPurgeUnusedTranslationsTitle, sPurgeUnusedTranslationsNone, mtInformation, [mbOK], 0);
+    TaskMessageDlg(sPurgeZombieItemsTitle, sPurgeZombieItemsNone, mtInformation, [mbOK], 0);
     Exit;
   end;
 
-  if (TaskMessageDlg(sPurgeUnusedTranslationsTitle, Format(sPurgeUnusedTranslations, [1.0*CountBefore.UnusedModule, 1.0*CountBefore.UnusedItem, 1.0*CountBefore.UnusedProperty, 1.0*CountBefore.UnusedTranslation]), mtConfirmation, [mbYes, mbNo], 0, mbNo) <> mrYes) then
-    Exit;
+  var KeepTranslations: boolean;
+  var TaskDialog := TTaskDialog.Create(nil);
+  try
+    TaskDialog.Caption := sPurgeZombieItemsCaption;
+    TaskDialog.Title := sPurgeZombieItemsTitle;
+    TaskDialog.Text := Format(sPurgeZombieItems, [1.0*CountBefore.UnusedModule, 1.0*CountBefore.UnusedItem, 1.0*CountBefore.UnusedProperty, 1.0*CountBefore.UnusedTranslation]);
+    TaskDialog.CommonButtons := [tcbYes, tcbNo];
+    TaskDialog.VerificationText := sPurgeOnlyUntranslatedZombieItems;
+
+    TaskDialog.Execute;
+
+    if (TaskDialog.ModalResult <> mrYes) then
+      exit;
+
+    KeepTranslations := (tfVerificationFlagChecked in TaskDialog.Flags);
+  finally
+    TaskDialog.Free;
+  end;
 
   SaveCursor(crHourGlass);
 
-  NeedReload := False;
-  CurrentModule := FocusedModule;
+  var SaveModified := FProject.Modified;
+  FProject.Modified := False;
 
-  GridItemsTableView.BeginUpdate;
+  BeginUpdate;
   try
+
+
+    FModuleItemsDataSource.Module := nil;
 
     // We purge manually instead of using the Project.Purge method so we can
     // update the treelist and data sources while we do it.
 
-    for LoopModule in FProject.Modules.Values.ToArray do // ToArray for stability since we delete from dictionary
+    for var Module in FProject.Modules.Values.ToArray do // ToArray for stability since we delete from dictionary
     begin
-      Module := LoopModule;
-      Module.BeginUpdate;
-      try
-        if (Module.Kind = mkOther) or (Module.IsUnused) then
-        begin
-          NeedReload := True;
-          if (Module = CurrentModule) then
-          begin
-            FModuleItemsDataSource.Module := nil;
-            CurrentModule := nil;
-          end;
-          Node := TreeListModules.Find(Module, TreeListModules.Root, False, True, TreeListFindFilter);
-          Node.Free;
-          FreeAndNil(Module);
-          continue;
-        end;
+      var ModuleDeleted := False;
 
-        for LoopItem in Module.Items.Values.ToArray do // ToArray for stability since we delete from dictionary
-        begin
-          Item := LoopItem;
-          Item.BeginUpdate;
-          try
-            if (Item.IsUnused) then
-            begin
-              NeedReload := True;
-              if (Module = CurrentModule) then
-              begin
-                FModuleItemsDataSource.Module := nil;
-                CurrentModule := nil;
-              end;
-              FreeAndNil(Item);
-              continue;
-            end;
+      if (Module.Kind = mkOther) then
+      begin
+        Module.Changed;
+        Module.Free;
+        ModuleDeleted := True;
+      end else
+      if (TLocalizerModule.PurgeModule(Module, KeepTranslations)) then
+        ModuleDeleted := True;
 
-            // TODO : Purge obsolete translations?
-            for Prop in Item.Properties.Values.ToArray do // ToArray for stability since we delete from dictionary
-              if (Prop.IsUnused) then
-              begin
-                NeedReload := True;
-                if (Module = CurrentModule) then
-                begin
-                  FModuleItemsDataSource.Module := nil;
-                  CurrentModule := nil;
-                end;
-                Prop.Free;
-              end;
-
-            (*
-            Do not delete empty item.
-            See explanation in TLocalizerProject.Purge
-
-            if (Item.Properties.Count = 0) then
-            begin
-              NeedReload := True;
-              if (Module = CurrentModule) then
-              begin
-                FModuleItemsDataSource.Module := nil;
-                CurrentModule := nil;
-              end;
-              FreeAndNil(Item);
-            end;
-            *)
-
-          finally
-            if (Item <> nil) then
-              Item.EndUpdate;
-          end;
-        end;
-
-        (*
-        Do not delete empty item.
-        See explanation in TLocalizerProject.Purge
-
-        if (Module.Items.Count = 0) then
-        begin
-          NeedReload := True;
-          if (Module = CurrentModule) then
-          begin
-            FModuleItemsDataSource.Module := nil;
-            CurrentModule := nil;
-          end;
-          Node := TreeListModules.Find(Module, TreeListModules.Root, False, True, TreeListFindFilter);
-          Node.Free;
-          FreeAndNil(Module);
-        end;
-        *)
-
-      finally
-        if (Module <> nil) then
-          Module.EndUpdate;
+      if (ModuleDeleted) then
+      begin
+        // Beware: Module has already been destroyed!
+        var Node := TreeListModules.Find(Module, TreeListModules.Root, False, True, TreeListFindFilter);
+        Node.Free;
+        continue;
       end;
     end;
 
-    if (NeedReload) then
-    begin
-      FProject.Modified := True;
-
-      LoadProject(FProject, False);
-    end;
-
   finally
-    GridItemsTableView.EndUpdate;
+    EndUpdate;
   end;
 
-  CountAfter := CountStuff;
+  if (FProject.Modified) then
+    LoadProject(FProject, False);
 
-  Msg := Format(sPurgeUnusedStatus,
+  FProject.Modified := FProject.Modified or SaveModified;
+
+  var CountAfter := CountStuff;
+
+  var Msg := Format(sPurgeZombieItemsStatus,
     [
     1.0*(CountBefore.CountModule-CountAfter.CountModule),
     1.0*(CountBefore.CountItem-CountAfter.CountItem),
     1.0*(CountBefore.CountProperty-CountAfter.CountProperty)
     ]);
-  TaskMessageDlg(sPurgeUnusedStatusTitle, Msg, mtInformation, [mbOK], 0);
+  TaskMessageDlg(sPurgeZombieItemsStatusTitle, Msg, mtInformation, [mbOK], 0);
 end;
 
 procedure TFormMain.ActionProjectRecoverExecute(Sender: TObject);
@@ -4898,6 +4843,157 @@ begin
   TAction(Sender).Enabled := (FocusedItem <> nil) and (not FocusedItem.IsUnused);
 
   TAction(Sender).Checked := (TAction(Sender).Enabled) and (FocusedItem.Status = ItemStatusTranslate);
+end;
+
+// -----------------------------------------------------------------------------
+
+procedure TFormMain.ActionPurgeSelectedExecute(Sender: TObject);
+resourcestring
+  sPurgeSelectedZombieItemsTitle = 'Purge selected unused items';
+  sPurgeSelectedZombieItems = 'Do you want to delete all unused entities from among the selected items?';
+var
+  Items: TArray<TCustomLocalizerItem>;
+begin
+  var CountBefore := CountStuff;
+
+  var KeepTranslations: boolean;
+  var TaskDialog := TTaskDialog.Create(nil);
+  try
+    TaskDialog.Caption := sPurgeZombieItemsCaption;
+    TaskDialog.Title := sPurgeSelectedZombieItemsTitle;
+    TaskDialog.Text := sPurgeSelectedZombieItems;
+    TaskDialog.CommonButtons := [tcbYes, tcbNo];
+    TaskDialog.VerificationText := sPurgeOnlyUntranslatedZombieItems;
+
+    TaskDialog.Execute;
+
+    if (TaskDialog.ModalResult <> mrYes) then
+      exit;
+
+    KeepTranslations := (tfVerificationFlagChecked in TaskDialog.Flags);
+  finally
+    TaskDialog.Free;
+  end;
+
+  var SaveModified := FProject.Modified;
+  FProject.Modified := False;
+
+  SaveCursor(crHourGlass);
+  BeginUpdate;
+  try
+
+    SetLength(Items, SelectionCount);
+    for var i := 0 to SelectionCount-1 do
+      Items[i] := Selection[i];
+
+    for var Item in Items do
+    begin
+      // Selected module or item, or item in selected module
+      if (Item.IsUnused) or (Item is TLocalizerModule) then
+      begin
+        if (Item is TLocalizerModule) then
+        begin
+          var Module := TLocalizerModule(Item);
+
+          if (TLocalizerModule.PurgeModule(Module, KeepTranslations)) then
+          begin
+            if (Module = FModuleItemsDataSource.Module) then
+              FModuleItemsDataSource.Module := nil;
+
+            // Beware: Module has already been destroyed!
+            var Node := TreeListModules.Find(Item, TreeListModules.Root, False, True, TreeListFindFilter);
+            Node.Free;
+          end;
+        end else
+        if (Item is TLocalizerItem) then
+        begin
+          var Module := TLocalizerItem(Item).Module;
+
+          if (TLocalizerItem.PurgeItem(TLocalizerItem(Item), KeepTranslations)) then
+          begin
+            if (Module = FModuleItemsDataSource.Module) then
+              FModuleItemsDataSource.Module := nil;
+          end;
+        end else
+        if (Item is TLocalizerProperty) then
+        begin
+          var Module := TLocalizerProperty(Item).Item.Module;
+
+          // If we selected a property of an item that only has one property, purge the
+          // item instead so we don't end up with an item with no properties.
+          if (TLocalizerProperty(Item).Item.Properties.Count = 1) then
+          begin
+            if (TLocalizerItem.PurgeItem(TLocalizerProperty(Item).Item, KeepTranslations)) then
+            begin
+              if (Module = FModuleItemsDataSource.Module) then
+                FModuleItemsDataSource.Module := nil;
+            end;
+          end else
+          if (TLocalizerProperty.PurgeProperty(TLocalizerProperty(Item), KeepTranslations)) then
+          begin
+            if (Module = FModuleItemsDataSource.Module) then
+              FModuleItemsDataSource.Module := nil;
+          end;
+        end;
+      end;
+    end;
+
+    if (FProject.Modified) then
+      LoadProject(FProject, False);
+
+  finally
+    EndUpdate;
+  end;
+
+  FProject.Modified := FProject.Modified or SaveModified;
+
+  var CountAfter := CountStuff;
+
+  var Msg := Format(sPurgeZombieItemsStatus,
+    [
+    1.0*(CountBefore.CountModule-CountAfter.CountModule),
+    1.0*(CountBefore.CountItem-CountAfter.CountItem),
+    1.0*(CountBefore.CountProperty-CountAfter.CountProperty)
+    ]);
+  TaskMessageDlg(sPurgeZombieItemsStatusTitle, Msg, mtInformation, [mbOK], 0);
+end;
+
+procedure TFormMain.ActionPurgeSelectedUpdate(Sender: TObject);
+var
+  Enabled: boolean;
+  i: integer;
+  Module, Item: TCustomLocalizerItem;
+begin
+  Enabled := False;
+  if (FocusedItem <> nil) then
+  begin
+    // First test the selected items
+    i := 0;
+    while (not Enabled) and (i < SelectionCount) do
+    begin
+      Enabled := Selection[i].IsUnused;
+      Inc(i);
+    end;
+
+    // Then, if necessary, test their children
+    i := 0;
+    while (not Enabled) and (i < SelectionCount) do
+    begin
+      Module := Selection[i];
+      if (Module is TLocalizerModule) then
+      begin
+        for Item in TLocalizerModule(Module).Items.Values do
+        begin
+          Enabled := Item.IsUnused;
+          if (Enabled) then
+            break;
+        end;
+      end;
+      Inc(i);
+    end;
+  end;
+
+  TAction(Sender).Enabled := Enabled;
 end;
 
 // -----------------------------------------------------------------------------
@@ -6355,7 +6451,7 @@ begin
 end;
 
 procedure TFormMain.GridItemsTableViewColumnTargetValidateDrawValue(Sender: TcxCustomGridTableItem; ARecord: TcxCustomGridRecord;
-  const AValue: TcxEditValue; AData: TcxEditValidateInfo);
+  const AValue: Variant; AData: TcxEditValidateInfo);
 var
   Prop: TLocalizerProperty;
   Translation: TLocalizerTranslation;
@@ -7868,7 +7964,7 @@ begin
   RefreshModuleStats;
 end;
 
-procedure TFormMain.TreeListModulesGetNodeImageIndex(Sender: TcxCustomTreeList; ANode: TcxTreeListNode; AIndexType: TcxTreeListImageIndexType; var AIndex: TcxImageIndex);
+procedure TFormMain.TreeListModulesGetNodeImageIndex(Sender: TcxCustomTreeList; ANode: TcxTreeListNode; AIndexType: TcxTreeListImageIndexType; var AIndex: TImageIndex);
 var
   Module: TLocalizerModule;
   TranslatedCount: integer;

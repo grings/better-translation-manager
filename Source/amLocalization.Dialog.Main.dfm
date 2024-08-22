@@ -14,7 +14,6 @@ object FormMain: TFormMain
   OnCreate = FormCreate
   OnShortCut = FormShortCut
   OnShow = FormShow
-  PixelsPerInch = 96
   TextHeight = 15
   object RibbonMain: TdxRibbon
     Left = 0
@@ -33,7 +32,6 @@ object FormMain: TFormMain
     TabAreaToolbar.Toolbar = BarManagerBarFeedback
     TabOrder = 0
     TabStop = False
-    ExplicitWidth = 964
     object RibbonTabMain: TdxRibbonTab
       Active = True
       Caption = 'Main'
@@ -112,6 +110,7 @@ object FormMain: TFormMain
     Top = 630
     Width = 1060
     Height = 23
+    Color = clBtnFace
     Images = DataModuleMain.ImageListSmall
     Panels = <
       item
@@ -140,8 +139,6 @@ object FormMain: TFormMain
     ParentFont = True
     OnMouseDown = StatusBarMouseDown
     OnMouseMove = StatusBarMouseMove
-    ExplicitTop = 620
-    ExplicitWidth = 964
   end
   object LayoutControlMain: TdxLayoutControl
     Left = 0
@@ -149,16 +146,16 @@ object FormMain: TFormMain
     Width = 1060
     Height = 476
     Align = alClient
-    TabOrder = 6
+    TabOrder = 2
     AutoSize = True
     LayoutLookAndFeel = DataModuleMain.LayoutSkinLookAndFeelTight
     ShowDesignSelectors = False
-    ExplicitWidth = 273
-    ExplicitHeight = 466
+    ExplicitTop = 121
+    ExplicitHeight = 509
     object TreeListModules: TcxTreeList
       Left = 3
       Top = 3
-      Width = 247
+      Width = 246
       Height = 432
       Bands = <
         item
@@ -250,75 +247,81 @@ object FormMain: TFormMain
       end
     end
     object LabelCountTranslated: TcxLabel
-      Left = 65
+      Left = 64
       Top = 438
       Caption = '99.999'
       Style.HotTrack = False
       Style.TransparentBorder = False
       Properties.Alignment.Horz = taRightJustify
       Properties.ShowAccelChar = False
+      TabOrder = 1
       Transparent = True
-      AnchorX = 98
+      AnchorX = 97
     end
     object LabelCountPending: TcxLabel
-      Left = 211
+      Left = 210
       Top = 438
       Caption = '999.999'
       Style.HotTrack = False
       Style.TransparentBorder = False
       Properties.Alignment.Horz = taRightJustify
       Properties.ShowAccelChar = False
+      TabOrder = 5
       Transparent = True
-      AnchorX = 250
+      AnchorX = 249
     end
     object LabelCountTranslatedPercent: TcxLabel
-      Left = 108
+      Left = 107
       Top = 438
       Caption = '(100%)'
       Style.HotTrack = False
       Style.TransparentBorder = False
       Properties.Alignment.Horz = taRightJustify
       Properties.ShowAccelChar = False
+      TabOrder = 3
       Transparent = True
-      AnchorX = 144
+      AnchorX = 143
     end
     object LabelCountModuleTranslated: TcxLabel
-      Left = 71
+      Left = 70
       Top = 457
       Caption = '9.999'
       Style.HotTrack = False
       Style.TransparentBorder = False
       Properties.Alignment.Horz = taRightJustify
       Properties.ShowAccelChar = False
+      TabOrder = 2
       Transparent = True
-      AnchorX = 98
+      AnchorX = 97
     end
     object LabelCountModuleTranslatedPercent: TcxLabel
-      Left = 114
+      Left = 113
       Top = 456
       Caption = '(25%)'
       Style.HotTrack = False
       Style.TransparentBorder = False
       Properties.Alignment.Horz = taRightJustify
       Properties.ShowAccelChar = False
+      TabOrder = 4
       Transparent = True
-      AnchorX = 144
+      AnchorX = 143
     end
     object LabelCountModulePending: TcxLabel
-      Left = 217
+      Left = 216
       Top = 457
       Caption = '99.999'
       Style.HotTrack = False
       Style.TransparentBorder = False
       Properties.Alignment.Horz = taRightJustify
       Properties.ShowAccelChar = False
+      TabOrder = 6
       Transparent = True
-      AnchorX = 250
+      AnchorX = 249
     end
     object GridItems: TcxGrid
-      Left = 260
+      Left = 259
       Top = 3
-      Width = 797
+      Width = 798
       Height = 348
       TabOrder = 7
       object GridItemsTableView: TcxGridTableView
@@ -413,7 +416,7 @@ object FormMain: TFormMain
           OnGetCellHint = GridItemsTableViewColumnGetCellHint
           Options.Editing = False
           Options.FilteringAddValueItems = False
-          SortIndex = 1
+          SortIndex = 0
           SortOrder = soAscending
           VisibleForEditForm = bFalse
           Width = 125
@@ -510,7 +513,7 @@ object FormMain: TFormMain
       end
     end
     object EditSourceText: TcxRichEdit
-      Left = 260
+      Left = 259
       Top = 386
       TabStop = False
       Properties.PlainText = True
@@ -524,7 +527,7 @@ object FormMain: TFormMain
       Width = 277
     end
     object EditTargetText: TcxRichEdit
-      Left = 553
+      Left = 552
       Top = 386
       Properties.PlainText = True
       Properties.ReadOnly = True
@@ -537,7 +540,7 @@ object FormMain: TFormMain
       OnEnter = EditTargetTextEnter
       OnExit = EditTargetTextExit
       Height = 87
-      Width = 479
+      Width = 480
     end
     object ButtonTextEditApply: TcxButton
       Left = 1035
@@ -709,6 +712,7 @@ object FormMain: TFormMain
     object LayoutGroupStatus: TdxLayoutGroup
       Parent = LayoutGroupModules
       AlignVert = avBottom
+      CaptionOptions.Text = 'Hidden Group'
       CaptionOptions.Visible = False
       Hidden = True
       ItemIndex = 3
@@ -730,6 +734,7 @@ object FormMain: TFormMain
       Parent = LayoutControlMainGroup_Root
       AlignHorz = ahLeft
       AlignVert = avClient
+      CaptionOptions.Text = 'Hidden Group'
       CaptionOptions.Visible = False
       Hidden = True
       ItemIndex = 1
@@ -758,6 +763,7 @@ object FormMain: TFormMain
     object LayoutGroupEditors: TdxLayoutGroup
       Parent = LayoutGroupMain
       AlignVert = avBottom
+      CaptionOptions.Text = 'Hidden Group'
       CaptionOptions.Visible = False
       Hidden = True
       ItemIndex = 2
@@ -768,6 +774,7 @@ object FormMain: TFormMain
     object LayoutGroupMain: TdxLayoutGroup
       Parent = LayoutControlMainGroup_Root
       AlignHorz = ahClient
+      CaptionOptions.Text = 'Hidden Group'
       CaptionOptions.Visible = False
       Hidden = True
       ItemIndex = 2
@@ -813,6 +820,7 @@ object FormMain: TFormMain
     end
     object LayoutGroupEditorButtons: TdxLayoutGroup
       Parent = LayoutGroupEditors
+      CaptionOptions.Text = 'Hidden Group'
       CaptionOptions.Visible = False
       Hidden = True
       ItemIndex = 3
@@ -938,8 +946,9 @@ object FormMain: TFormMain
           ItemName = 'BarButtonBuildProject'
         end
         item
+          ViewLevels = [ivlLargeControlOnly, ivlSmallIconWithText, ivlSmallIcon, ivlControlOnly]
           Visible = True
-          ItemName = 'BarButtonPurgeProject'
+          ItemName = 'BarButtonPurge'
         end
         item
           Visible = True
@@ -986,7 +995,7 @@ object FormMain: TFormMain
           ItemName = 'dxBarSubItem1'
         end>
       OneOnRow = False
-      Row = 1
+      Row = 0
       UseOwnFont = False
       Visible = True
       WholeRow = False
@@ -1240,7 +1249,7 @@ object FormMain: TFormMain
           ItemName = 'dxBarButton20'
         end>
       OneOnRow = False
-      Row = 1
+      Row = 0
       UseOwnFont = False
       Visible = True
       WholeRow = False
@@ -1368,7 +1377,7 @@ object FormMain: TFormMain
           ItemName = 'dxBarButton23'
         end>
       OneOnRow = False
-      Row = 1
+      Row = 0
       UseOwnFont = False
       Visible = True
       WholeRow = False
@@ -1387,7 +1396,7 @@ object FormMain: TFormMain
           Visible = True
           ItemName = 'ButtonSettings'
         end>
-      OneOnRow = True
+      OneOnRow = False
       Row = 0
       UseOwnFont = False
       Visible = True
@@ -1891,6 +1900,23 @@ object FormMain: TFormMain
       SyncImageIndex = False
       ImageIndex = 52
     end
+    object BarButtonPurgeSelected: TdxBarButton
+      Action = ActionPurgeSelected
+      Category = 0
+    end
+    object BarButtonPurge: TdxBarSubItem
+      Action = ActionPurge
+      Category = 0
+      ItemLinks = <
+        item
+          Visible = True
+          ItemName = 'BarButtonPurgeProject'
+        end
+        item
+          Visible = True
+          ItemName = 'BarButtonPurgeSelected'
+        end>
+    end
   end
   object OpenDialogXLIFF: TOpenDialog
     Filter = 
@@ -1989,9 +2015,10 @@ object FormMain: TFormMain
     end
     object ActionProjectPurge: TAction
       Category = 'Project'
-      Caption = 'Purge...'
-      Hint = 'Remove unused items'
+      Caption = 'Purge all unused...'
+      Hint = 'Remove all unused items'
       ImageIndex = 6
+      ShortCut = 16430
       OnExecute = ActionProjectPurgeExecute
       OnUpdate = ActionHasModulesUpdate
     end
@@ -2549,6 +2576,23 @@ object FormMain: TFormMain
         'd and translation manager'
       OnExecute = ActionIntegrationTrackingExecute
     end
+    object ActionPurgeSelected: TAction
+      Category = 'Translation'
+      Caption = 'Purge selected item(s)...'
+      Hint = 'Remove unused items from among the selected items'
+      ImageIndex = 6
+      ShortCut = 46
+      OnExecute = ActionPurgeSelectedExecute
+      OnUpdate = ActionPurgeSelectedUpdate
+    end
+    object ActionPurge: TAction
+      Category = 'Project'
+      Caption = 'Purge'
+      Hint = 'Removed unused items'
+      ImageIndex = 6
+      OnExecute = ActionDummyExecute
+      OnUpdate = ActionHasModulesUpdate
+    end
   end
   object OpenDialogProject: TOpenDialog
     Filter = 'Translation projects (*.xlat)|*.xlat|All files (*.*)|*.*'
@@ -2600,6 +2644,11 @@ object FormMain: TFormMain
       item
         Visible = True
         ItemName = 'BarButtonStateReject'
+      end
+      item
+        BeginGroup = True
+        Visible = True
+        ItemName = 'BarButtonPurgeSelected'
       end
       item
         BeginGroup = True

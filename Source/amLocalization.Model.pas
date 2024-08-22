@@ -322,6 +322,7 @@ type
 
     procedure Clear; override;
     function Purge: boolean;
+    class function PurgeModule(Module: TLocalizerModule; KeepTranslations: boolean): boolean;
 
     function FindItem(const AName: string; IgnoreUnused: boolean = False): TLocalizerItem; overload;
     function FindItem(AResourceID: Word; IgnoreUnused: boolean = False): TLocalizerItem; overload;
@@ -351,6 +352,7 @@ type
 
     procedure Clear; override;
     function Purge: boolean;
+    class function PurgeItem(Item: TLocalizerItem; KeepTranslations: boolean): boolean;
 
     function FindProperty(const AName: string; IgnoreUnused: boolean = False): TLocalizerProperty;
     function AddProperty(const AName: string): TLocalizerProperty; overload;
@@ -506,6 +508,7 @@ type
     destructor Destroy; override;
 
     procedure Clear; override;
+    class function PurgeProperty(Prop: TLocalizerProperty; KeepTranslations: boolean): boolean;
 
     function Traverse(Delegate: TLocalizerPropertyDelegate; Sorted: boolean = False): boolean; overload; override;
     function Traverse(Delegate: TLocalizerTranslationDelegate): boolean; reintroduce; overload;
@@ -1530,6 +1533,38 @@ begin
   end;
 end;
 
+class function TLocalizerModule.PurgeModule(Module: TLocalizerModule; KeepTranslations: boolean): boolean;
+begin
+  Result := False;
+
+  Module.BeginUpdate;
+  try
+
+    if (KeepTranslations) or (not Module.IsUnused) then
+    begin
+      for var Item in Module.Items.Values.ToArray do // ToArray for stability since we delete from dictionary
+        TLocalizerItem.PurgeItem(Item, KeepTranslations);
+    end;
+
+  finally
+    Module.EndUpdate;
+  end;
+
+  // Do not delete empty entity unless it's unused.
+  // See explanation in TLocalizerProject.Purge
+
+  if (Module.IsUnused) then
+  begin
+    // Delete Module if we are deleting unconditionally or the Module has no items left
+    if (not KeepTranslations) or (Module.Status = ItemStatusDontTranslate) or (Module.Items.Count = 0) then
+    begin
+      Result := True;
+      Module.Changed;
+      Module.Free;
+    end;
+  end;
+end;
+
 // -----------------------------------------------------------------------------
 
 procedure TLocalizerModule.Clear;
@@ -1743,6 +1778,8 @@ begin
   inherited;
 end;
 
+// -----------------------------------------------------------------------------
+
 function TLocalizerItem.Purge: boolean;
 var
   Prop: TLocalizerProperty;
@@ -1762,6 +1799,38 @@ begin
       Changed;
   finally
     EndUpdate;
+  end;
+end;
+
+class function TLocalizerItem.PurgeItem(Item: TLocalizerItem; KeepTranslations: boolean): boolean;
+begin
+  Result := False;
+
+  Item.BeginUpdate;
+  try
+
+    if ((KeepTranslations) or (not Item.IsUnused)) and (Item.Status <> ItemStatusDontTranslate)  then
+    begin
+      for var Prop in Item.Properties.Values.ToArray do // ToArray for stability since we delete from dictionary
+        TLocalizerProperty.PurgeProperty(Prop, KeepTranslations);
+    end;
+
+  finally
+    Item.EndUpdate;
+  end;
+
+  // Do not delete empty entity unless it's unused.
+  // See explanation in TLocalizerProject.Purge
+
+  if (Item.IsUnused) then
+  begin
+    // Delete Item if we are deleting unconditionally or the Item has no properties left
+    if (not KeepTranslations) or (Item.Status = ItemStatusDontTranslate) or (Item.Properties.Count = 0) then
+    begin
+      Result := True;
+      Item.Changed;
+      Item.Free;
+    end;
   end;
 end;
 
@@ -1938,6 +2007,24 @@ var
   Translation: TLocalizerTranslation;
 begin
   Result := (Translations.TryGetTranslation(Language, Translation)) and (Translation.IsTranslated);
+end;
+
+// -----------------------------------------------------------------------------
+
+class function TLocalizerProperty.PurgeProperty(Prop: TLocalizerProperty; KeepTranslations: boolean): boolean;
+begin
+  if (not Prop.IsUnused) then
+    Exit(False);
+
+  if (KeepTranslations) and (Prop.Status <> ItemStatusDontTranslate) then
+    // Keep property if it has translations
+    for var Translation in Prop.Translations.Translations.Values do
+      if (Translation.IsTranslated) then
+        Exit(False);
+
+  Result := True;
+  Prop.Changed;
+  Prop.Free;
 end;
 
 // -----------------------------------------------------------------------------
