@@ -41,6 +41,11 @@ uses
 var
   TranslationManagerRegistryKey: HKEY = HKEY_CURRENT_USER;
   TranslationManagerRegistryRoot: string = '\Software\Melander\TranslationManager\';
+  // Portable registry tree must NOT be below the main root since our portable settings
+  // persistence (via Settings.SaveRegistryToStream) basically just dumps a registry
+  // tree to a stream and we don't want the portable settings saved as part of the
+  // normal settings.
+  TranslationManagerPortableRegistryRoot: string = '\Software\Melander\TranslationManager.Portable\';
 
 //------------------------------------------------------------------------------
 //

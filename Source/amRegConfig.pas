@@ -190,6 +190,7 @@ type
     FPath: string;
     FSubPath: string;
     procedure SetSubPath(const Value: string);
+    procedure SetPath(const Value: string);
   protected
     function GetName: string; override;
     function GetKey: string; override;
@@ -210,6 +211,7 @@ type
     procedure SaveRegistryToStream(Stream: TStream);
     procedure LoadRegistryFromStream(Stream: TStream);
 
+    property RegistryPath: string read FPath write SetPath;
     property SubPath: string read FSubPath write SetSubPath;
   end;
 
@@ -617,16 +619,21 @@ begin
   inherited Create(nil);
   FRegistry := TFixedRegIniFile.Create('\', AAccess);
   Registry.RootKey := Root;
-  Registry.OpenKey(APath, True);
-  FPath := APath;
-  if (not FPath.IsEmpty) and (not FPath.EndsWith('\')) then
-    FPath := FPath+'\';
+  SetPath(APath);
 end;
 
 destructor TConfiguration.Destroy;
 begin
   FreeAndNil(FRegistry);
   inherited Destroy;
+end;
+
+procedure TConfiguration.SetPath(const Value: string);
+begin
+  Registry.OpenKey(Value, True);
+  FPath := Value;
+  if (not FPath.IsEmpty) and (not FPath.EndsWith('\')) then
+    FPath := FPath+'\';
 end;
 
 procedure TConfiguration.SetSubPath(const Value: string);
@@ -868,8 +875,11 @@ begin
       Reader.ReadListBegin;
       begin
 
+        Reader.ReadString;
+        (* Disabled for now as we have a concrete need to be able to change the path without invalidating the settings file.
         if (Reader.ReadString <> KeyPath) then
           raise Exception.Create('Invalid portable registry root path');
+        *)
 
         LoadKey(KeyPath);
 
