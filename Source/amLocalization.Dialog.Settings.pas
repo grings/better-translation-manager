@@ -604,10 +604,17 @@ begin
 
   LoadSettings;
 
-  Result := (ShowModal = mrOK);
+  Result := False;
 
-  if (Result) then
-    ApplySettings;
+  while (ModalResult = mrNone) do
+  begin
+
+    Result := (ShowModal = mrOK);
+
+    if (Result) then
+      ApplySettings;
+
+  end;
 end;
 
 // -----------------------------------------------------------------------------
@@ -704,6 +711,12 @@ procedure TFormSettings.ApplySettings;
       Result := 0;
   end;
 
+resourcestring
+  sWarningPortableSettingsCaption = 'Portable Configuration';
+  sWarningPortableSettingsMessage = 'A portable settings file already exist.'#13#13+
+    'Would you like to use the settings in the existing portable settings file instead of the current settings?'#13#13+
+    'If you answer No a new portable settings file will be created with your current settings.'#13+
+    'Note that the settings include custom data such as the Stop List.';
 begin
   (*
   ** General section
@@ -785,9 +798,33 @@ begin
 
   if (TranslationManagerSettings.System.Portable <> CheckBoxPortable.Checked) then
   begin
-    // Try to create or delete the portable token file
     try
 
+      // Detect existing portable config file
+      if (CheckBoxPortable.Checked) then
+      begin
+        var PortableConfigFilename := TPath.ChangeExtension(ParamStr(0), '.portable');
+
+        if (TFile.Exists(PortableConfigFilename)) then
+        begin
+          var Res := TaskMessageDlg(sWarningPortableSettingsCaption, sWarningPortableSettingsMessage, mtWarning, [mbYes, mbNo, mbCancel], 0, mbCancel);
+
+          case Res of
+            mrYes:
+              {Keep file};
+
+            mrNo:
+              TFile.Delete(PortableConfigFilename);
+
+          else
+            ModalResult := mrNone;
+            exit;
+          end;
+        end;
+
+      end;
+
+      // Try to create or delete the portable token file
       if (TranslationManagerSettings.System.Portable) then
       begin
         if (TFile.Exists(TranslationManagerSettings.FolderInstall+'portable')) then
@@ -800,7 +837,10 @@ begin
       TranslationManagerSettings.System.Portable := CheckBoxPortable.Checked;
     except
       on E: Exception do
+      begin
+        ModalResult := mrNone;
         ShowMessageFmt('Unable to change the portable setting: %s', [E.Message]);
+      end;
     end;
   end;
 
