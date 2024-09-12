@@ -646,6 +646,9 @@ type
   protected
     procedure ScaleFactorChanged(M: Integer; D: Integer); override;
   private
+    // TScreen event handlers
+    procedure ActiveFormChanged(Sender: TObject);
+  private
     // Translation project event handlers
     procedure OnProjectChanged(Sender: TObject);
     procedure OnModuleChanged(Module: TLocalizerModule);
@@ -1131,6 +1134,8 @@ begin
 
   ExceptionHandler.RegisterExceptionInfoProvider(Self);
 
+  Screen.OnActiveFormChange := ActiveFormChanged;
+
   SingleInstance.OnProcessParam := LoadFromSingleInstance;
 end;
 
@@ -1215,6 +1220,18 @@ begin
     tmaShutdown:
       TranslationManagerApplication.Unsubscribe(Self);
   end;
+end;
+
+// -----------------------------------------------------------------------------
+
+procedure TFormMain.ActiveFormChanged(Sender: TObject);
+begin
+  // Do not process action shortcuts whilke other forms are focused.
+  // For example, we don't want to process the [Del] key while the Search dialog is active.
+  if (Screen.ActiveForm = Self) then
+    ActionList.State := asNormal
+  else
+    ActionList.State := asSuspended;
 end;
 
 // -----------------------------------------------------------------------------
