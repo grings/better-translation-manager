@@ -208,8 +208,6 @@
         <DCCReference Include="amLocalization.Dialog.TargetLanguage.pas">
             <Form>FormTargetLanguage</Form>
         </DCCReference>
-        <DCCReference Include="amLocalization.Provider.Microsoft.Terminology.SOAP.pas"/>
-        <DCCReference Include="amLocalization.Provider.Microsoft.Terminology.pas"/>
         <DCCReference Include="amLocalization.Provider.DeepL.pas"/>
         <DCCReference Include="amLocalization.TranslationMemory.FileFormats.GenericCSV.pas"/>
         <DCCReference Include="amLocalization.Dialog.TranslationMemory.SelectFileFormat.pas">
