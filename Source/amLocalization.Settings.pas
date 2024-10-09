@@ -183,14 +183,6 @@ type
     property Region: string read FRegion write FRegion;
   end;
 
-  TTranslationManagerProviderMicrosoftTerminologySettings = class(TConfigurationSection)
-  private
-    FMaxResult: integer;
-  public
-  published
-    property MaxResult: integer read FMaxResult write FMaxResult default 10;
-  end;
-
   TTranslationManagerProviderTM = class(TConfigurationSection)
   private
     FFilename: string;
@@ -221,7 +213,6 @@ type
   private
     FMicrosoftV3: TTranslationManagerProviderMicrosoftTranslatorV3Settings;
     FTranslationMemory: TTranslationManagerProviderTM;
-    FMicrosoftTerminology: TTranslationManagerProviderMicrosoftTerminologySettings;
     FDeepL: TTranslationManagerProviderDeepLSettings;
   public
     constructor Create(AOwner: TConfigurationSection); override;
@@ -229,7 +220,6 @@ type
     procedure ResetSettings;
   published
     property MicrosoftTranslatorV3: TTranslationManagerProviderMicrosoftTranslatorV3Settings read FMicrosoftV3;
-    property MicrosoftTerminology: TTranslationManagerProviderMicrosoftTerminologySettings read FMicrosoftTerminology;
     property TranslationMemory: TTranslationManagerProviderTM read FTranslationMemory;
     property DeepL: TTranslationManagerProviderDeepLSettings read FDeepL;
   end;
@@ -964,7 +954,6 @@ constructor TTranslationManagerProviderSettings.Create(AOwner: TConfigurationSec
 begin
   inherited;
   FMicrosoftV3 := TTranslationManagerProviderMicrosoftTranslatorV3Settings.Create(Self);
-  FMicrosoftTerminology := TTranslationManagerProviderMicrosoftTerminologySettings.Create(Self);
   FTranslationMemory := TTranslationManagerProviderTM.Create(Self);
   FDeepL := TTranslationManagerProviderDeepLSettings.Create(Self);
 end;
@@ -973,7 +962,6 @@ destructor TTranslationManagerProviderSettings.Destroy;
 begin
   FDeepL.Free;
   FMicrosoftV3.Free;
-  FMicrosoftTerminology.Free;
   FTranslationMemory.Free;
   inherited;
 end;
@@ -983,7 +971,6 @@ begin
   ApplyDefault;
 
   FMicrosoftV3.ApplyDefault;
-  FMicrosoftTerminology.ApplyDefault;
   FTranslationMemory.ApplyDefault;
 end;
 

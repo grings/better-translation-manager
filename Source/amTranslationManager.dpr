@@ -60,8 +60,6 @@ uses
   amLocalization.TranslationMemory.FileFormats.TBX in 'amLocalization.TranslationMemory.FileFormats.TBX.pas',
   amLocalization.TranslationMemory.FileFormats.MSGlossaryCSV in 'amLocalization.TranslationMemory.FileFormats.MSGlossaryCSV.pas',
   amLocalization.Dialog.TargetLanguage in 'amLocalization.Dialog.TargetLanguage.pas' {FormTargetLanguage},
-  amLocalization.Provider.Microsoft.Terminology.SOAP in 'amLocalization.Provider.Microsoft.Terminology.SOAP.pas',
-  amLocalization.Provider.Microsoft.Terminology in 'amLocalization.Provider.Microsoft.Terminology.pas',
   amLocalization.Provider.DeepL in 'amLocalization.Provider.DeepL.pas',
   amLocalization.TranslationMemory.FileFormats.GenericCSV in 'amLocalization.TranslationMemory.FileFormats.GenericCSV.pas',
   amLocalization.Dialog.TranslationMemory.SelectFileFormat in 'amLocalization.Dialog.TranslationMemory.SelectFileFormat.pas' {FormSelectFileFormat},

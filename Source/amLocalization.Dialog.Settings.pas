@@ -190,9 +190,6 @@ type
     CheckBoxTMPromptToSave: TcxCheckBox;
     dxLayoutItem45: TdxLayoutItem;
     CheckBoxSaveBackup: TcxCheckBox;
-    dxLayoutItem46: TdxLayoutItem;
-    SpinEditTranslatorTerminologyMaxResult: TcxSpinEdit;
-    LayoutGroupTranslatorMSTerminology: TdxLayoutGroup;
     dxLayoutGroup18: TdxLayoutGroup;
     GridColorsLevel: TcxGridLevel;
     GridColors: TcxGrid;
@@ -662,8 +659,6 @@ begin
   CheckBoxTMPromptToSave.Checked := TranslationManagerSettings.Providers.TranslationMemory.PromptToSave;
   CheckBoxTMBackgroundQuery.Checked := TranslationManagerSettings.Providers.TranslationMemory.BackgroundQuery;
 
-  SpinEditTranslatorTerminologyMaxResult.Value := TranslationManagerSettings.Providers.MicrosoftTerminology.MaxResult;
-
   EditTranslatorMSAPIKey.Text := TranslationManagerSettings.Providers.MicrosoftTranslatorV3.APIKey;
   if (TranslationManagerSettings.Providers.MicrosoftTranslatorV3.APIKeyValidated) then
     EditTranslatorMSAPIKey.Properties.Buttons[0].ImageIndex := 1;
@@ -759,8 +754,6 @@ begin
   TranslationManagerSettings.Providers.TranslationMemory.LoadOnDemand := CheckBoxTMLoadOnDemand.Checked;
   TranslationManagerSettings.Providers.TranslationMemory.PromptToSave := CheckBoxTMPromptToSave.Checked;
   TranslationManagerSettings.Providers.TranslationMemory.BackgroundQuery := CheckBoxTMBackgroundQuery.Checked;
-
-  TranslationManagerSettings.Providers.MicrosoftTerminology.MaxResult := SpinEditTranslatorTerminologyMaxResult.Value;
 
   TranslationManagerSettings.Providers.MicrosoftTranslatorV3.APIKey := EditTranslatorMSAPIKey.Text;
   TranslationManagerSettings.Providers.MicrosoftTranslatorV3.APIKeyValidated := (EditTranslatorMSAPIKey.Properties.Buttons[0].ImageIndex = 1);
