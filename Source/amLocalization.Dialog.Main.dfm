@@ -2018,7 +2018,7 @@ object FormMain: TFormMain
       Caption = 'Purge all unused...'
       Hint = 'Remove all unused items'
       ImageIndex = 6
-      ShortCut = 16430
+      ShortCut = 24622
       OnExecute = ActionProjectPurgeExecute
       OnUpdate = ActionHasModulesUpdate
     end
@@ -2581,7 +2581,7 @@ object FormMain: TFormMain
       Caption = 'Purge selected item(s)...'
       Hint = 'Remove unused items from among the selected items'
       ImageIndex = 6
-      ShortCut = 46
+      ShortCut = 16430
       OnExecute = ActionPurgeSelectedExecute
       OnUpdate = ActionPurgeSelectedUpdate
     end
