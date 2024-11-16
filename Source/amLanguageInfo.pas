@@ -48,6 +48,7 @@ type
   protected
     function GetFlag: TBitmap;
     function GetLocaleID: LCID;
+    function GetIsCustomLocale: boolean;
     function GetLanguageID: LangID;
     function GetPrimaryLanguageID: Word;
     function GetSubLanguageID: Word;
@@ -90,6 +91,7 @@ type
     property PrimaryLanguageID: Word read GetPrimaryLanguageID;
     property SubLanguageID: Word read GetSubLanguageID;
     property LanguageID: LangID read GetLanguageID;
+    property IsCustomLocale: boolean read GetIsCustomLocale;
 
     /// <summary>ISO3166Name: The ISO3166-1 alpha-2 two letter country code.
     /// E.g. US, GB, DK, DE etc.</summary>
@@ -1089,6 +1091,20 @@ begin
       FLocale := LocaleNameToLCID(PChar(FLocaleName), 0);
   end;
   Result := FLocale;
+end;
+
+function TLanguageItem.GetIsCustomLocale: boolean;
+begin
+  (*
+  LOCALE_CUSTOM_UNSPECIFIED
+  An unspecified custom locale, used to identify all supplemental locales except
+  the locale for the current user. Supplemental locales cannot be distinguished
+  from one another by their locale identifiers, but can be distinguished by
+  their locale names. Certain NLS functions can return this constant to indicate
+  that they cannot provide a useful identifier for a particular locale.
+  The value of LOCALE_CUSTOM_UNSPECIFIED is 0x1000 (4096).
+  *)
+  Result := (LocaleID = LOCALE_CUSTOM_UNSPECIFIED);
 end;
 
 //------------------------------------------------------------------------------

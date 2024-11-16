@@ -5598,8 +5598,8 @@ begin
   FSourceLanguage := Value;
   BarEditItemSourceLanguage.EditValue := FSourceLanguage.LocaleName;
   FProject.SourceLanguage := FSourceLanguage;
-  GridItemsTableViewColumnSource.Caption := FSourceLanguage.LanguageName;
-  LayoutItemEditorSource.CaptionOptions.text := FSourceLanguage.LanguageName;
+  GridItemsTableViewColumnSource.Caption := FSourceLanguage.DisplayName;
+  LayoutItemEditorSource.CaptionOptions.text := FSourceLanguage.DisplayName;
   if (FSourceLanguage.IsRightToLeft <> IsRightToLeft) and (TranslationManagerSettings.Editor.EditBiDiMode) then
   begin
     // Source language is Right-to-Left but rest of UI isn't - or vice versa
@@ -5678,8 +5678,8 @@ begin
 
     CreateTranslationMemoryPeeker(True);
 
-    GridItemsTableViewColumnTarget.Caption := FTargetLanguage.LanguageName;
-    LayoutItemEditorTarget.CaptionOptions.Text := FTargetLanguage.LanguageName;
+    GridItemsTableViewColumnTarget.Caption := FTargetLanguage.DisplayName;
+    LayoutItemEditorTarget.CaptionOptions.Text := FTargetLanguage.DisplayName;
     if (FTargetLanguage.IsRightToLeft <> IsRightToLeft) and (TranslationManagerSettings.Editor.EditBiDiMode) then
     begin
       // Target language is Right-to-Left but rest of UI isn't - or vice versa

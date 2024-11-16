@@ -286,9 +286,10 @@ begin
     begin
       DataSetLanguages.Append;
       try
-        DataSetLanguagesLocaleID.Value := LanguageItem.LocaleID;
+        if (not LanguageItem.IsCustomLocale) then
+          DataSetLanguagesLocaleID.Value := LanguageItem.LocaleID;
         DataSetLanguagesLocaleName.AsString := LanguageItem.LocaleName;
-        DataSetLanguagesLanguageName.AsString := LanguageItem.LanguageName;
+        DataSetLanguagesLanguageName.AsString := LanguageItem.DisplayName;
         DataSetLanguagesCountryName.AsString := LanguageItem.CountryName;
 
         DataSetLanguages.Post;

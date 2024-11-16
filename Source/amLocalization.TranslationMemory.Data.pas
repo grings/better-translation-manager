@@ -52,6 +52,7 @@ type
     FProviderHandle: integer;
     FAdding: boolean;
     FImperfectLanguageMatchPrompt: boolean;
+    FFieldLanguage: TDictionary<TField, TLanguageItem>;
   private
     function FindField(LanguageItem: TLanguageItem): TField; overload;
     class function FindField(DataSet: TDataSet; LanguageItem: TLanguageItem): TField; overload;
@@ -529,6 +530,7 @@ constructor TDataModuleTranslationMemory.Create(AOwner: TComponent);
 begin
   inherited;
 
+  FFieldLanguage := TDictionary<TField, TLanguageItem>.Create;
   FRefreshEvent := TEvent.Create(nil, False, False, '');
   FEnabled := True;
 end;
@@ -541,6 +543,7 @@ begin
   TranslationProviderRegistry.UnregisterProvider(FProviderHandle);
 
   FRefreshEvent.Free;
+  FFieldLanguage.Free;
 
   inherited;
 end;
@@ -699,9 +702,9 @@ begin
     Exit(nil);
 
   Result := TWideMemoField.Create(TableTranslationMemory);
+  FFieldLanguage.Add(Result, LanguageItem);
 
-  Result.DisplayLabel := LanguageItem.LanguageName;
-  Result.Tag := NativeInt(LanguageItem);
+  Result.DisplayLabel := LanguageItem.DisplayName;
   Result.FieldName := LanguageItem.LocaleName;
   Result.DataSet := TableTranslationMemory;
   Result.DisplayWidth := 100;
@@ -774,43 +777,45 @@ end;
 
 function TDataModuleTranslationMemory.FindField(LanguageItem: TLanguageItem): TField;
 begin
+  // Look for perfect language item match
+  for var Pair in FFieldLanguage do
+    if (LanguageItem = Pair.Value) then
+      Exit(Pair.Key);
+
+  // Match on language properties
   Result := FindField(TableTranslationMemory, LanguageItem);
 end;
 
 class function TDataModuleTranslationMemory.FindField(DataSet: TDataSet; LanguageItem: TLanguageItem): TField;
-var
-  i: integer;
 begin
-  // Look for perfect language item match
-  for i := 0 to DataSet.FieldCount-1 do
-    if (LanguageItem = TLanguageItem(DataSet.Fields[i].Tag)) then
-      Exit(DataSet.Fields[i]);
+  Result := nil;
 
-  // Look for perfect match on locale name (should be identical to above)
-  for i := 0 to DataSet.FieldCount-1 do
+  // Look for perfect match on locale name
+  for var i := 0 to DataSet.FieldCount-1 do
     if (AnsiSameText(LanguageItem.LocaleName, DataSet.Fields[i].FieldName)) then
       Exit(DataSet.Fields[i]);
 
-  // Recursive match on fallback
-  var Fallback := LanguageItem.Fallback;
-  if (Fallback <> nil) then
+  var FieldLanguageItems: TArray<TLanguageItem>;
+  Setlength(FieldLanguageItems, DataSet.FieldCount);
+
+  // Look for match on ISO 639-1 (language, invariant) and fill lookup while we're at it
+  for var i := 0 to High(FieldLanguageItems) do
   begin
-    Result := FindField(DataSet, Fallback);
-    if (Result <> nil) then
-      exit;
+    FieldLanguageItems[i] := LanguageInfo.FindLocaleName(DataSet.Fields[i].FieldName);
+
+    if (LanguageItem.ISO639_1Name = FieldLanguageItems[i].ISO639_1Name) then
+      Exit(DataSet.Fields[i]);
   end;
 
-  // Look for match on ISO 639-1 (language, invariant)
-  for i := 0 to DataSet.FieldCount-1 do
-    if (LanguageItem.ISO639_1Name = TLanguageItem(DataSet.Fields[i].Tag).ISO639_1Name) then
-      Exit(DataSet.Fields[i]);
-
   // Look for match on LCID
-  for i := 0 to DataSet.FieldCount-1 do
-    if (LanguageItem.LocaleID = TLanguageItem(DataSet.Fields[i].Tag).LocaleID) then
-      Exit(DataSet.Fields[i]);
+  if (not LanguageItem.IsCustomLocale) then
+    for var i := 0 to High(FieldLanguageItems) do
+      if (LanguageItem.LocaleID = FieldLanguageItems[i].LocaleID) then
+        Exit(DataSet.Fields[i]);
 
-  Result := nil;
+  // Recursive match on fallback
+  if (LanguageItem.Fallback <> nil) then
+    Result := FindField(DataSet, LanguageItem.Fallback);
 end;
 
 // -----------------------------------------------------------------------------
@@ -841,13 +846,11 @@ begin
 end;
 
 function TDataModuleTranslationMemory.GetLanguages: TArray<TLanguageItem>;
-var
-  i: integer;
 begin
   SetLength(Result, TableTranslationMemory.FieldCount);
 
-  for i := 0 to TableTranslationMemory.FieldCount-1 do
-    Result[i] := TLanguageItem(TableTranslationMemory.Fields[i].Tag);
+  for var i := 0 to TableTranslationMemory.FieldCount-1 do
+    Result[i] := FFieldLanguage[TableTranslationMemory.Fields[i]];
 end;
 
 function TDataModuleTranslationMemory.GetModified: boolean;
@@ -1250,22 +1253,26 @@ begin
   SourceField := FindField(SourceLanguage);
   TargetField := FindField(TargetLanguage);
 
-  if (TargetField <> nil) and (TLanguageItem(TargetField.Tag) <> TargetLanguage) then
+  if (TargetField <> nil) then
   begin
-    var Res: integer;
-
-    if (FImperfectLanguageMatchPrompt) then
+    var MatchedLanguage := FFieldLanguage[TargetField];
+    if (MatchedLanguage <> TargetLanguage) then
     begin
-      Res := MessageDlg(Format(sImperfectLanguageMatch, [TargetLanguage.LocaleName, TargetLanguage.LanguageName, TLanguageItem(TargetField.Tag).LocaleName, TLanguageItem(TargetField.Tag).LanguageName]),
-        mtConfirmation, [mbYes, mbNo, mbCancel], 0, mbCancel);
+      var Res: integer;
 
-      FImperfectLanguageMatchPrompt := False;
+      if (FImperfectLanguageMatchPrompt) then
+      begin
+        Res := MessageDlg(Format(sImperfectLanguageMatch, [TargetLanguage.LocaleName, TargetLanguage.LanguageName, MatchedLanguage.LocaleName, MatchedLanguage.LanguageName]),
+          mtConfirmation, [mbYes, mbNo, mbCancel], 0, mbCancel);
 
-      if (Res = mrCancel) then
-        Exit(tmDupActionAbort);
+        FImperfectLanguageMatchPrompt := False;
 
-      if (Res = mrYes) then
-        TargetField := nil;
+        if (Res = mrCancel) then
+          Exit(tmDupActionAbort);
+
+        if (Res = mrYes) then
+          TargetField := nil;
+      end;
     end;
   end;
 
@@ -1355,9 +1362,14 @@ var
           var LocaleName := Reader.ReadString;
           LanguageItem := LanguageInfo.FindLocaleName(LocaleName);
         end;
-        Field.Tag := NativeInt(LanguageItem);
-        Field.FieldName := Reader.ReadString;
-        Field.DisplayLabel := Reader.ReadString;
+        Assert(LanguageItem <> nil);
+        FFieldLanguage.Add(Field, LanguageItem);
+
+        Reader.ReadString;
+        Field.FieldName := LanguageItem.LocaleName;
+
+        Reader.ReadString;
+        Field.DisplayLabel := LanguageItem.DisplayName;
 
         while (not Reader.EndOfList) do
           Reader.SkipValue;
@@ -1456,6 +1468,7 @@ begin
     TableTranslationMemory.Close;
     TableTranslationMemory.Fields.Clear;
     TableTranslationMemory.FieldDefs.Clear;
+    FFieldLanguage.Clear;
 
     Reader := TReader.Create(Stream, 8192);
     try
@@ -1551,9 +1564,10 @@ var
       begin
         Writer.WriteListBegin;
         begin
-          Writer.WriteString(TLanguageItem(TableTranslationMemory.Fields[i].Tag).LocaleName); // RFC 4646 locale name
-          Writer.WriteString(TableTranslationMemory.Fields[i].FieldName); // Locale short name
-          Writer.WriteString(TableTranslationMemory.Fields[i].DisplayName); // Locale name
+          var LanguageItem := FFieldLanguage[TableTranslationMemory.Fields[i]];
+          Writer.WriteString(LanguageItem.LocaleName); // RFC 4646 locale name
+          Writer.WriteString(LanguageItem.LocaleName); // Field.FieldName
+          Writer.WriteString(LanguageItem.DisplayName); // Field.DisplayLabel
         end;
         Writer.WriteListEnd;
       end;
