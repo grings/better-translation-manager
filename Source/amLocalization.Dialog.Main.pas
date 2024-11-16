@@ -730,6 +730,7 @@ type
     FTextEditProperty: TLocalizerProperty; // Property being edited
     FTextEditing: boolean; // True if text editor has focus
     FTextEditModified: boolean;
+    procedure UpdateTranslationTextEdit;
     procedure PostTranslationTextEdit;
     procedure ApplyTranslationTextEdit(EndEdit: boolean);
   private
@@ -2383,6 +2384,8 @@ begin
   **
   *)
 
+  ReloadProperty(AProp);
+
   if (AutoApplyTranslations = aaNever) or (not AProp.HasTranslation(TranslationLanguage)) then
     Exit;
 
@@ -2548,8 +2551,6 @@ begin
       ReloadProperty(Prop);
     end;
   end;
-
-  ReloadProperty(AProp);
 end;
 
 procedure TFormMain.TranslationMemoryPeekHandler(Sender: TObject);
@@ -3139,6 +3140,31 @@ begin
   // Moving focus out of edit control will also apply the edit (via the OnExit handler)
   if (EndEdit) and (EditTargetText.Focused) then
     TreeListModules.SetFocus;
+end;
+
+procedure TFormMain.UpdateTranslationTextEdit;
+begin
+  // Load text edit values
+  if (GridItemsTableView.Controller.FocusedRecord <> nil) then
+  begin
+    EditSourceText.Lines.Text := VarToStr(GridItemsTableView.Controller.FocusedRecord.Values[GridItemsTableViewColumnSource.Index]);
+    EditTargetText.Lines.Text := VarToStr(GridItemsTableView.Controller.FocusedRecord.Values[GridItemsTableViewColumnTarget.Index]);
+  end else
+  begin
+    EditSourceText.Text := '';
+    EditTargetText.Text := '';
+  end;
+
+  if (GridItemsTableView.Controller.FocusedRecord <> nil) and (FTextEditProperty <> nil) then
+  begin
+    EditTargetText.SelStart := MaxInt;
+    EditTargetText.Properties.ReadOnly := False;
+  end else
+  begin
+    EditTargetText.Properties.ReadOnly := True;
+  end;
+
+  FTextEditModified := False;
 end;
 
 procedure TFormMain.PostTranslationTextEdit;
@@ -6729,7 +6755,6 @@ end;
 procedure TFormMain.GridItemsTableViewDataControllerRecordChanged(ADataController: TcxCustomDataController; ARecordIndex, AItemIndex: Integer);
 var
   Prop: TLocalizerProperty;
-  s: string;
 begin
   if (AItemIndex <> GridItemsTableViewColumnTarget.Index) then
     Exit;
@@ -6742,13 +6767,7 @@ begin
     TranslationAdded(Prop);
 
   // Update text edit in case change was made via in-place edit or Record.Values
-  s := VarToStr(ADataController.Values[ARecordIndex, AItemIndex]);
-  if (EditTargetText.Lines.Text <> s) then
-  begin
-    EditTargetText.Lines.Text := s;
-    EditTargetText.SelStart := MaxInt;
-    FTextEditModified := False;
-  end;
+  UpdateTranslationTextEdit;
 end;
 
 procedure TFormMain.GridItemsTableViewEditing(Sender: TcxCustomGridTableView; AItem: TcxCustomGridTableItem; var AAllow: Boolean);
@@ -6785,20 +6804,7 @@ begin
   FTextEditProperty := FocusedProperty;
 
   // Load text edit values
-  if (AFocusedRecord <> nil) and (FTextEditProperty <> nil) then
-  begin
-    EditSourceText.Lines.Text := VarToStr(AFocusedRecord.Values[GridItemsTableViewColumnSource.Index]);
-    EditTargetText.Lines.Text := VarToStr(AFocusedRecord.Values[GridItemsTableViewColumnTarget.Index]);
-    EditTargetText.SelStart := MaxInt;
-    FTextEditModified := False;
-    EditTargetText.Properties.ReadOnly := False;
-  end else
-  begin
-    EditSourceText.Text := '';
-    EditTargetText.Text := '';
-    FTextEditModified := False;
-    EditTargetText.Properties.ReadOnly := True;
-  end;
+  UpdateTranslationTextEdit;
 end;
 
 procedure TFormMain.GridItemsTableViewInitEdit(Sender: TcxCustomGridTableView; AItem: TcxCustomGridTableItem; AEdit: TcxCustomEdit);
@@ -7651,6 +7657,9 @@ begin
     RowIndex := GridItemsTableView.DataController.GetRowIndexByRecordIndex(RecordIndex, False);
     if (RowIndex <> -1) then
       GridItemsTableView.ViewData.Rows[RowIndex].Invalidate;
+
+    if (RowIndex = GridItemsTableView.Controller.FocusedRowIndex) then
+      UpdateTranslationTextEdit;
   end;
 end;
 
