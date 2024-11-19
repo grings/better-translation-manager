@@ -644,6 +644,7 @@ type
     procedure MsgRefreshModuleStats(var Msg: TMessage); message MSG_REFRESH_MODULE_STATS;
     procedure MsgCopyData(var Msg: TWMCopyData); message WM_COPYDATA;
   protected
+    procedure Loaded; override;
     procedure ScaleFactorChanged(M: Integer; D: Integer); override;
   private
     // TScreen event handlers
@@ -1023,6 +1024,31 @@ end;
 
 // -----------------------------------------------------------------------------
 
+procedure TFormMain.Loaded;
+begin
+  inherited;
+
+  // Work around for DevExpress issue t1263794
+  // ParentFont=True breaks High DPI on main monitor
+  if (ParentFont) and (Monitor.PixelsPerInch <> PixelsPerInch) then
+    // Perform(WM_DPICHANGED, 0, 0) or SendMessage(...WM_DPICHANGED...) would
+    // have been better but that doesn't work.
+    ScaleForPPI(Monitor.PixelsPerInch);
+end;
+
+procedure TFormMain.ScaleFactorChanged(M, D: Integer);
+begin
+  inherited ScaleFactorChanged(M, D);
+
+  // This does not appear to be necessary anymore
+  // DataModuleMain.FontSizeChanged(Font.Size);
+
+  // Resize stats panel
+  UpdateProjectModifiedIndicator;
+end;
+
+// -----------------------------------------------------------------------------
+
 procedure TFormMain.FormCreate(Sender: TObject);
 
   procedure CreateBookmarkMenu;
@@ -1390,13 +1416,6 @@ begin
 
   TranslationManagerSettings.Valid := True;
   TranslationManagerSettings.WriteConfig;
-end;
-
-procedure TFormMain.ScaleFactorChanged(M, D: Integer);
-begin
-  inherited ScaleFactorChanged(M, D);
-  // TODO : Does not appear to be necessary anymore
-  DataModuleMain.FontSizeChanged(Font.Size);
 end;
 
 // -----------------------------------------------------------------------------
@@ -6288,9 +6307,12 @@ resourcestring
   sLocalizerProjectBackupAutoSaveDisabledProject = 'Autosave has been temporarily disabled for this project.';
   sLocalizerProjectBackupAutoSaveDisabledGlobal = 'Autosave is not enabled.';
 var
-//  s: string;
   ImageIndex: integer;
 begin
+  if (FProject = nil) then
+    // We're being called from ScaleFactorChanged before FProject has been created
+    exit;
+
   if (FProject.Modified) then
   begin
     FStatusBarPanelHint[StatusBarPanelModified] := sLocalizerProjectModified;
@@ -6332,7 +6354,14 @@ begin
   var s := Format(sLocalizerStatusCount,
     [1.0*FProject.StatusCount[ItemStatusTranslate], 1.0*FProject.StatusCount[ItemStatusDontTranslate], 1.0*FProject.StatusCount[ItemStatusHold]]);
 
-  StatusBar.Panels[StatusBarPanelStats].Width := (StatusBar.Canvas.TextWidth(s) + 15) and $FFFFFFF8; // 8 pixels extra and round up to 8 pixels
+  // Note: We can't use StatusBar.Canvas.Font to calculate the size because it
+  // doesn't get updated on DPI change.
+  //
+  // var TextWidth := StatusBar.Canvas.TextWidth(s);
+  //
+  // BarManager.Font doesn't either but for some reason this works anyway:
+  var TextWidth := cxTextWidth(BarManager.Font, s);
+  StatusBar.Panels[StatusBarPanelStats].Width := (TextWidth + 15) and $FFFFFFF8; // 8 pixels extra and round up to 8 pixels
   StatusBar.Panels[StatusBarPanelStats].Text := s;
 
   StatusBar.Update;
