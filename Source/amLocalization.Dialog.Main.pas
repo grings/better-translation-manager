@@ -11,6 +11,7 @@
 interface
 
 {$WARN SYMBOL_PLATFORM OFF}
+{$define t1263794} // Get rid of this once DevExpress t1263794 has been resolved
 
 uses
   Generics.Collections,
@@ -646,6 +647,10 @@ type
   protected
     procedure Loaded; override;
     procedure ScaleFactorChanged(M: Integer; D: Integer); override;
+{$ifdef t1263794}
+  public
+    procedure ScaleForPPI(ATargetDPI: Integer; AWindowRect: PRect = nil); override;
+{$endif}
   private
     // TScreen event handlers
     procedure ActiveFormChanged(Sender: TObject);
@@ -810,6 +815,10 @@ uses
   // Skin utils
   dxSkinsDefaultPainters,
   dxSkinsdxRibbonPainter,
+
+{$ifdef t1263794}
+  dxForms,
+{$endif}
 
   dxHunspellDictionary,
   dxSpellCheckerDialogs,
@@ -1028,12 +1037,13 @@ procedure TFormMain.Loaded;
 begin
   inherited;
 
-  // Work around for DevExpress issue t1263794
-  // ParentFont=True breaks High DPI on main monitor
+{$ifdef t1263794_old}
+  // Old workaround for t1263794. Only kept for reference.
   if (ParentFont) and (Monitor.PixelsPerInch <> PixelsPerInch) then
     // Perform(WM_DPICHANGED, 0, 0) or SendMessage(...WM_DPICHANGED...) would
     // have been better but that doesn't work.
     ScaleForPPI(Monitor.PixelsPerInch);
+{$endif}
 end;
 
 procedure TFormMain.ScaleFactorChanged(M, D: Integer);
@@ -1046,6 +1056,16 @@ begin
   // Resize stats panel
   UpdateProjectModifiedIndicator;
 end;
+
+{$ifdef t1263794}
+procedure TFormMain.ScaleForPPI(ATargetDPI: Integer; AWindowRect: PRect);
+begin
+  // Work around for DevExpress issue t1263794
+  // ParentFont=True breaks High DPI on main monitor
+  if ParentFont or not (csLoading in ComponentState) then
+    TdxFormHelper.ScaleForPPI(Self, ATargetDPI, AWindowRect, False);
+end;
+{$endif}
 
 // -----------------------------------------------------------------------------
 
