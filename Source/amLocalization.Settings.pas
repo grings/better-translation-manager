@@ -635,11 +635,11 @@ begin
   WorkareaRect := Monitor.WorkareaRect;
 
   if (Height <> -1) then
-    NewHeight := Min(Height, WorkareaRect.Height)
+    NewHeight := Min(MulDiv(Height, Form.PixelsPerInch, 96), WorkareaRect.Height)
   else
     NewHeight := TFormCracker(Form).Height;
   if (Width <> -1) then
-    NewWidth := Min(Width, WorkareaRect.Width)
+    NewWidth := Min(MulDiv(Width, Form.PixelsPerInch, 96), WorkareaRect.Width)
   else
     NewWidth := TFormCracker(Form).Width;
 
@@ -674,8 +674,8 @@ begin
   GetWindowPlacement(Form.Handle, @wp);
   Left := wp.rcNormalPosition.Left;
   Top := wp.rcNormalPosition.Top;
-  Height := wp.rcNormalPosition.Bottom-Top;
-  Width := wp.rcNormalPosition.Right-Left;
+  Height := MulDiv(wp.rcNormalPosition.Bottom-Top, 96, Form.PixelsPerInch);
+  Width := MulDiv(wp.rcNormalPosition.Right-Left, 96, Form.PixelsPerInch);
   Maximized := (Form.WindowState = wsMaximized);
   Visible := Form.Visible;
 
