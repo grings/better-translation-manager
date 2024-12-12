@@ -5598,7 +5598,11 @@ end;
 
 function TFormMain.GetIsPropertyActive: boolean;
 begin
-  Result := (GridItemsTableView.IsControlFocused) and (GridItemsTableView.Controller.FocusedRowIndex <> -1);
+  // Note: We need to behave as if the grid is focused if the treelist isn't focused.
+  // Otherwise having the text editor controls focused would behave as if we were
+  // operating on a module, when performing actions that can either operate on a
+  // property or a module. E.g. auto-translate.
+  Result := ((GridItemsTableView.IsControlFocused) or (not TreeListModules.Focused)) and (GridItemsTableView.Controller.FocusedRowIndex <> -1);
 end;
 
 function TFormMain.GetActiveProperty: TLocalizerProperty;
