@@ -1689,6 +1689,10 @@ object FormMain: TFormMain
         item
           Visible = True
           ItemName = 'dxBarButton32'
+        end
+        item
+          Visible = True
+          ItemName = 'dxBarButton24'
         end>
     end
     object dxBarButton28: TdxBarButton
@@ -1916,6 +1920,10 @@ object FormMain: TFormMain
           Visible = True
           ItemName = 'BarButtonPurgeSelected'
         end>
+    end
+    object dxBarButton24: TdxBarButton
+      Action = ActionGotoNextStateObsolete
+      Category = 0
     end
   end
   object OpenDialogXLIFF: TOpenDialog
@@ -2592,6 +2600,13 @@ object FormMain: TFormMain
       ImageIndex = 6
       OnExecute = ActionDummyExecute
       OnUpdate = ActionHasModulesUpdate
+    end
+    object ActionGotoNextStateObsolete: TAction
+      Tag = 3
+      Category = 'Find'
+      Caption = 'Obsolete'
+      ImageIndex = 88
+      OnExecute = ActionGotoNextStateObsoleteExecute
     end
   end
   object OpenDialogProject: TOpenDialog

@@ -354,6 +354,8 @@ type
     BarButtonPurgeSelected: TdxBarButton;
     BarButtonPurge: TdxBarSubItem;
     ActionPurge: TAction;
+    ActionGotoNextStateObsolete: TAction;
+    dxBarButton24: TdxBarButton;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure ActionProjectUpdateExecute(Sender: TObject);
@@ -524,6 +526,7 @@ type
     procedure GridItemsTableViewMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure ActionPurgeSelectedExecute(Sender: TObject);
     procedure ActionPurgeSelectedUpdate(Sender: TObject);
+    procedure ActionGotoNextStateObsoleteExecute(Sender: TObject);
   private
     FProject: TLocalizerProject;
     FProjectFilename: string;
@@ -3597,6 +3600,17 @@ begin
     function(Prop: TLocalizerProperty): boolean
     begin
       Result := (ItemStateNew in Prop.State);
+    end);
+end;
+
+procedure TFormMain.ActionGotoNextStateObsoleteExecute(Sender: TObject);
+begin
+  FLastGotoAction := TAction(Sender);
+  GotoNext(
+    function(Prop: TLocalizerProperty): boolean
+    begin
+      var Translation := Prop.Translations.FindTranslation(TranslationLanguage);
+      Result := (Translation <> nil) and (Translation.Status = tStatusObsolete);
     end);
 end;
 
