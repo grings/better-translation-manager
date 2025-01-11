@@ -26,7 +26,7 @@ uses
   VirtualTrees.Types,
 
   amLanguageInfo,
-  amLocalization.Dialog;
+  amLocalization.Dialog, dxUIAClasses;
 
 type
   TFormLanguages = class(TFormDialog)
@@ -39,8 +39,12 @@ type
     ActionList1: TActionList;
     ActionApplyFilter: TAction;
     dxLayoutEmptySpaceItem1: TdxLayoutEmptySpaceItem;
+    dxLayoutItem1: TdxLayoutItem;
+    CheckBoxHideSupplemental: TcxCheckBox;
+    ActionHideSupplemental: TAction;
     procedure ActionApplyFilterExecute(Sender: TObject);
     procedure ActionApplyFilterUpdate(Sender: TObject);
+    procedure ActionHideSupplementalExecute(Sender: TObject);
   private
     FTreeView: TVirtualStringTree;
     FNodes: TList<PVirtualNode>;
@@ -103,6 +107,25 @@ end;
 //------------------------------------------------------------------------------
 
 constructor TFormLanguages.Create(AOwner: TComponent);
+
+  function AddColumn(const Caption: string; const ValueExample: string = ''): TVirtualTreeColumn;
+  begin
+    Result := FTreeView.Header.Columns.Add;
+    Result.Text := Caption;
+    var Width := Canvas.TextWidth(Caption);
+    if (ValueExample <> '') then
+      Width := Max(Width, Canvas.TextWidth(ValueExample));
+    Result.Width := Width + ScaleValue(16);
+  end;
+
+resourcestring
+  sLanguagesLanguageCountry = 'Language, Country';
+  sLanguagesShortName = 'Short';
+  sLanguagesLocale = 'Locale';
+const
+  sLanguagesRFC4646 = 'RFC 4646';
+  sLanguagesISO639_1 = 'ISO639-1';
+  sLanguagesISO639_2 = 'ISO639-2';
 begin
   inherited;
 
@@ -115,6 +138,13 @@ begin
   FTreeView.TreeOptions.SelectionOptions := FTreeView.TreeOptions.SelectionOptions + [toFullRowSelect];
   FTreeView.IncrementalSearch := isAll;
   FTreeView.CheckImageKind := ckSystemDefault;
+  FTreeView.Header.Options := [hoVisible, hoColumnResize, hoDblClickResize];
+  AddColumn(sLanguagesLanguageCountry);
+  AddColumn(sLanguagesRFC4646, 'WW-WWW');
+  AddColumn(sLanguagesISO639_1, 'WW');
+  AddColumn(sLanguagesISO639_2, 'WWW');
+  AddColumn(sLanguagesShortName, 'WWW');
+  AddColumn(sLanguagesLocale, '00000000');
 
   LayoutItemTargetLanguage.Control := FTreeView;
 
@@ -131,18 +161,36 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TFormLanguages.TreeViewGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
+resourcestring
+  sLanguagesSupplemental = '(Supplemental)';
 begin
   if (Node = nil) or (Node = FTreeView.RootNode) then
     Exit;
 
   var LanguageItem := NodeToLanguageItem(Node);
 
-  if (Node.Parent = FTreeView.RootNode) and (Node.ChildCount > 0) then
-    // Top level parent node: Region invariant
-    CellText := Format('%s - %s', [ExtractLanguage(LanguageItem.DisplayName), LanguageItem.LocaleName.ToUpper])
-  else
-    // Child nodes or top level nodes with out children: Language, Region
-    CellText := Format('%s - %s', [LanguageItem.LanguageName, LanguageItem.LocaleName]);
+  case Column of
+    0:
+      begin
+        if (Node.Parent = FTreeView.RootNode) and (Node.ChildCount > 0) then
+          // Top level parent node: Region invariant
+          CellText := LanguageItem.LanguageName
+        else
+          // Child nodes or top level nodes without children: Language, Region
+          CellText := LanguageItem.CountryName;
+      end;
+    1: CellText := LanguageItem.LocaleName;
+    2: CellText := LanguageItem.ISO639_1Name;
+    3: CellText := LanguageItem.ISO639_2Name;
+    4: CellText := LanguageItem.LanguageShortName;
+    5:
+      begin
+        if (not LanguageItem.IsCustomLocale) then
+          CellText := LanguageItem.LocaleID.ToHexString(8)
+        else
+          CellText := sLanguagesSupplemental;
+      end
+  end;
 
 (*
   if (LanguageItem.Invariant) then
@@ -208,13 +256,22 @@ begin
           LanguageNode.CheckType := ctCheckBox;
           LanguageNode.States := LanguageNode.States - [vsExpanded];
           Languages.Add(LanguageName, LanguageNode);
+
+          if (LanguageItem.IsCustomLocale) and (ActionHideSupplemental.Checked) then
+            FTreeView.IsVisible[LanguageNode] := False;
         end else
         begin
           // Invariant locales with the same language code as an existing locale
           // are added as child nodes under that.
-          LanguageNode := FTreeView.AddChild(LanguageNode, LanguageItem);
-          FNodes.Add(LanguageNode);
-          LanguageNode.CheckType := ctCheckBox;
+          LocaleNode := FTreeView.AddChild(LanguageNode, LanguageItem);
+          FNodes.Add(LocaleNode);
+          LocaleNode.CheckType := ctCheckBox;
+
+          if (LanguageItem.IsCustomLocale) and (ActionHideSupplemental.Checked) then
+            FTreeView.IsVisible[LocaleNode] := False
+          else
+            // Ensure parent is visible in case we were so unlucky to get a supplemental as the parent
+            FTreeView.IsVisible[LanguageNode] := True;
         end;
       end;
 
@@ -233,6 +290,12 @@ begin
           LocaleNode := FTreeView.AddChild(LanguageNode, LanguageItem);
           FNodes.Add(LocaleNode);
           LocaleNode.CheckType := ctCheckBox;
+
+          if (LanguageItem.IsCustomLocale) and (ActionHideSupplemental.Checked) then
+            FTreeView.IsVisible[LocaleNode] := False
+          else
+            // Ensure parent is visible in case we were so unlucky to get a supplemental as the parent
+            FTreeView.IsVisible[LanguageNode] := True;
         end else
         begin
           // This shouldn't happen but don't bomb if it does.
@@ -240,6 +303,9 @@ begin
           FNodes.Add(LanguageNode);
           LanguageNode.CheckType := ctCheckBox;
           Languages.Add(LanguageName, LanguageNode);
+
+          if (LanguageItem.IsCustomLocale) and (ActionHideSupplemental.Checked) then
+            FTreeView.IsVisible[LanguageNode] := False
         end;
       end;
 
@@ -287,6 +353,53 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TFormLanguages.ActionHideSupplementalExecute(Sender: TObject);
+begin
+  var SupplementalVisible := not ActionHideSupplemental.Checked;
+
+  FTreeView.BeginUpdate;
+  try
+    for var Node in FNodes do
+    begin
+      var LanguageItem := NodeToLanguageItem(Node);
+
+      if (LanguageItem.IsCustomLocale) then
+      begin
+        var IsVisible := SupplementalVisible;
+
+        // If node is checked then it must be visible regardless of type
+        if (Node.CheckState = csCheckedNormal) then
+          IsVisible := True
+        else
+        // If node has children that are checked then node must be visible
+        if (not IsVisible) and (Node.ChildCount > 0) then
+        begin
+          var ChildNode := Node.FirstChild;
+          while (ChildNode <> nil) do
+          begin
+            if (ChildNode.CheckState = csCheckedNormal) then
+            begin
+              IsVisible := True;
+              break;
+            end;
+
+            ChildNode := ChildNode.NextSibling;
+          end;
+        end;
+
+        FTreeView.IsVisible[Node] := IsVisible;
+      end;
+    end;
+
+    FTreeView.Invalidate;
+  finally
+    FTreeView.EndUpdate;
+  end;
+
+end;
+
+//------------------------------------------------------------------------------
+
 function TFormLanguages.GetApplyFilter: boolean;
 begin
   Result := ActionApplyFilter.Checked;
@@ -314,15 +427,31 @@ var
 begin
   Result := False;
 
-  for i := 0 to FNodes.Count-1 do
-    if (NodeToLanguageItem(FNodes[i]) = Language) then
-    begin
-      FNodes[i].CheckState := csCheckedNormal;
-      FTreeView.InvalidateNode(FNodes[i]);
-      FTreeView.Expanded[FNodes[i].Parent] := True;
-      Result := True;
-      break;
-    end;
+  FTreeView.BeginUpdate;
+  try
+
+    for i := 0 to FNodes.Count-1 do
+      if (NodeToLanguageItem(FNodes[i]) = Language) then
+      begin
+        if (FNodes[i].Parent <> nil) then
+        begin
+          FTreeView.Expanded[FNodes[i].Parent] := True; // This will survive Parent=nil...
+          if (FNodes[i].Parent <> FTreeView.RootNode) then
+            FTreeView.IsVisible[FNodes[i].Parent] := True; // ...but this won't :-/
+          FTreeView.InvalidateNode(FNodes[i].Parent);
+        end;
+
+        FNodes[i].CheckState := csCheckedNormal;
+        FTreeView.IsVisible[FNodes[i]] := True;  // In case we have hidden a supplemental locale
+        FTreeView.InvalidateNode(FNodes[i]);
+
+        Result := True;
+        break;
+      end;
+
+  finally
+    FTreeView.EndUpdate;
+  end;
 end;
 
 //------------------------------------------------------------------------------

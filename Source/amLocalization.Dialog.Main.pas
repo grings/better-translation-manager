@@ -555,6 +555,7 @@ type
     function GetTranslationLanguage: TTranslationLanguage;
     procedure ClearTargetLanguage;
     procedure UpdateTargetLanguage(Clear: boolean = False);
+    function ValidateNamingScheme: boolean;
   private
     // Spell check
     FCanSpellCheck: boolean;
@@ -2868,7 +2869,7 @@ begin
     begin
       var s := TaskDialogImportUpdate.Text;
       try
-        TaskDialogImportUpdate.Text := Format(s, [TranslationLanguage.TranslatedCount*1.0, TargetLanguage.LanguageName]);
+        TaskDialogImportUpdate.Text := Format(s, [TranslationLanguage.TranslatedCount*1.0, TargetLanguage.DisplayName]);
 
         if (not TaskDialogImportUpdate.Execute) then
           Exit;
@@ -3084,7 +3085,7 @@ begin
   begin
     s := TaskDialogImportUpdate.Text;
     try
-      TaskDialogImportUpdate.Text := Format(s, [TranslationLanguage.TranslatedCount*1.0, TargetLanguage.LanguageName]);
+      TaskDialogImportUpdate.Text := Format(s, [TranslationLanguage.TranslatedCount*1.0, TargetLanguage.DisplayName]);
 
       if (not TaskDialogImportUpdate.Execute) then
         Exit;
@@ -4269,6 +4270,8 @@ begin
   if (LoadProperties.FileFormatVersion < LocalizationFileFormatVersionCurrent) then
     TaskMessageDlg(sProjectFileUpgradedTitle, Format(sProjectFileUpgraded, [LoadProperties.FileFormatVersion, LocalizationFileFormatVersionCurrent]), mtInformation, [mbOK], -1);
 
+  ValidateNamingScheme;
+
   (* This must be optional or not done at all. We don't need access to the EXE in order to edit translations.
   if (CheckSourceFile) then
     CheckStringsSymbolFile(False);
@@ -4296,6 +4299,16 @@ procedure TFormMain.MsgAfterShow(var Msg: TMessage);
 var
   i: integer;
   Param: string;
+resourcestring
+  sLanguageShortNameDeprecatedTitle = 'The ISO639-2 naming scheme has been deprecated';
+  sLanguageShortNameDeprecatedMsg = 'You are currently using the ISO639-2 language module naming scheme.'#13#13+
+    'The ISO639-2 scheme has been deprecated by Microsoft starting with Windows 10. This does not mean '+
+    'that it cannot still be used for existing languages, but new languages will most likely '+
+    'not support the naming scheme.'#13+
+    'We will notify you if you use or add a language which isn''t supported by the naming scheme.'#13#13+
+    'The naming scheme can be changed in the application settings.'#13#13+
+    'As a reminder, we will continue to display this message periodically until you have changed to another '+
+    'naming scheme. If you do not want this reminder, select Ignore.';
 begin
   TranslationManagerSettings.System.EndBoot;
 
@@ -4350,6 +4363,25 @@ begin
         PostMessage(Handle, MSG_FILE_OPEN, Ord(True), 0);
     finally
       FPendingFileOpenLock.Leave;
+    end;
+  end;
+
+  // Warn against LOCALE_SABBREVLANGNAME deprecation (used in TLanguageItem.LanguageShortName)
+  if (TranslationManagerSettings.System.ModuleNameScheme = mnsISO639_2) then
+  begin
+    const DaysBetweenWarning = 30;
+
+    var WarnCounter := StrToIntDef(TranslationManagerSettings.Messages.Values['LOCALE_SABBREVLANGNAME'], 0);
+
+    if (WarnCounter >= 0) and (Trunc(Date) > WarnCounter + DaysBetweenWarning) then
+    begin
+      var Res := TaskMessageDlg(sLanguageShortNameDeprecatedTitle, sLanguageShortNameDeprecatedMsg, mtWarning, [mbOK, mbIgnore], 0, mbOK);
+
+      WarnCounter := Trunc(Date);
+      if (Res = mrIgnore) then
+        WarnCounter := -WarnCounter; // Negative value disables warning
+
+      TranslationManagerSettings.Messages.Values['LOCALE_SABBREVLANGNAME'] := WarnCounter.ToString;
     end;
   end;
 end;
@@ -4807,6 +4839,8 @@ begin
 
     if (not FormSettings.Execute) then
       Exit;
+
+    ValidateNamingScheme;
 
     CreateTranslationMemoryPeeker(False);
 
@@ -5441,7 +5475,7 @@ begin
               LanguageItem := Language.Language;
 
               Res := TaskMessageDlg(sDeleteLanguageTranslationsTitle,
-                Format(sDeleteLanguageTranslations, [LanguageItem.LanguageName, Language.TranslatedCount]),
+                Format(sDeleteLanguageTranslations, [LanguageItem.DisplayName, Language.TranslatedCount]),
                 mtConfirmation, Buttons, 0, mbNo);
 
               if (Res = mrCancel) then
@@ -5493,9 +5527,14 @@ begin
       for i := 0 to FormLanguages.TargetLanguageCount-1 do
         FProject.TranslationLanguages.Add(FormLanguages.TargetLanguage[i]);
 
-      // If we deleted current target language we must select a new one - default to source language
-      if (FTranslationLanguage = nil) then
-        TargetLanguage := SourceLanguage;
+      if (ValidateNamingScheme) then
+      begin // Block to avoid duplicate naming scheme warning
+
+        // If we deleted current target language we must select a new one - default to source language
+        if (FTranslationLanguage = nil) then
+          TargetLanguage := SourceLanguage;
+
+      end;
 
     finally
       GridItemsTableView.EndUpdate;
@@ -5835,6 +5874,8 @@ begin
   finally
     EndUpdate;
   end;
+
+  ValidateNamingScheme;
 end;
 
 procedure TFormMain.ClearTargetLanguage;
@@ -5850,6 +5891,46 @@ begin
   FModuleItemsDataSource.TranslationLanguage := GetTranslationLanguage; // Must use getter
   TreeListModules.FullRefresh;
   RefreshModuleStats;
+end;
+
+function TFormMain.ValidateNamingScheme: boolean;
+resourcestring
+  sProjectUnusableShortNameTitle = 'Unsuitable naming scheme in use';
+  sProjectUnusableShortNameMsg = 'You are currently using the ISO639-2 language module naming scheme '+
+    'which was deprecated by Microsoft in Windows 10.'#13#13+
+    'One or more of your target languages are not supported by this naming scheme. Because of this the '+
+    'generated language module filenames will not be valid.'#13#13+
+    'You should change the naming scheme in the application settings.'#13#13+
+    'Filename: %s'#13+
+    'Language: %s';
+begin
+  Result := True;
+
+  // Warn against LOCALE_SABBREVLANGNAME deprecation (used in TLanguageItem.LanguageShortName)
+  if (TranslationManagerSettings.System.ModuleNameScheme = mnsISO639_2) then
+  begin
+    var LastWarning := StrToIntDef(TranslationManagerSettings.Messages.Values['HasLanguageShortName'], 0);
+
+    // Shut up if we already warned user today
+    if (LastWarning = Trunc(Date)) then
+      exit;
+
+    LastWarning := Trunc(Date);
+
+    // Verify that project isn't using any target languages that produce invalid filenames
+    for var TranslationLanguage in FProject.TranslationLanguages do
+      if (not TranslationLanguage.Language.HasLanguageShortName) then
+      begin
+        var Filename := TPath.GetFileName(LocalizationTools.BuildModuleFilename(FProject.SourceFilename, TranslationLanguage.Language, TranslationManagerSettings.System.ModuleNameScheme));
+
+        var Res := TaskMessageDlg(sProjectUnusableShortNameTitle, Format(sProjectUnusableShortNameMsg, [TPath.GetFileName(Filename), TranslationLanguage.Language.DisplayName]), mtWarning, [mbOK, mbIgnore], 0, mbOK);
+        if (Res = mrIgnore) then
+          // Ignore for now, but continue bugging user tomorrow
+          TranslationManagerSettings.Messages.Values['HasLanguageShortName'] := LastWarning.ToString;
+
+        Exit(False);
+      end;
+  end;
 end;
 
 // -----------------------------------------------------------------------------
@@ -7398,7 +7479,7 @@ begin
   if (TranslationLanguage = nil) then
     Exit; // TODO : Should never happen but an error message would be nice anyway.
 
-  QueueToast(Format(sLocalizerResourceModuleBuilding, [LanguageItem.LanguageName]));
+  QueueToast(Format(sLocalizerResourceModuleBuilding, [LanguageItem.DisplayName]));
 
   ProjectProcessor := TProjectResourceProcessor.Create;
   try
@@ -7446,6 +7527,12 @@ var
   i: integer;
   LanguageItem: TLanguageItem;
   Filename: string;
+resourcestring
+  sDuplicateModuleNameTitle = 'Duplicate language module names';
+  sDuplicateModuleName = 'Building the selected language modules, using the current file naming scheme, would produce duplicate filenames.'#13#13+
+    'You must either deselect some of the target languages, or switch to another file naming scheme.'#13#13+
+    'Filename: %s'#13+
+    'Language: %s';
 begin
   if (not CheckSourceFile) then
     Exit;
@@ -7457,22 +7544,36 @@ begin
 
   SaveCursor(crHourGlass);
 
-  FProjectIndex := nil;
-
-  FProject.BeginLoad;
+  // Build list of filenames so we can check for duplicate module names (can easily happen with supplemental locales)
+  var LanguageModules := TDictionary<string, TLanguageItem>.Create(TIStringComparer.Ordinal);
   try
-
     for i := 0 to FProject.TranslationLanguages.Count-1 do
     begin
       LanguageItem := FProject.TranslationLanguages[i].Language;
       Filename := LocalizationTools.BuildModuleFilename(FProject.SourceFilename, LanguageItem, TranslationManagerSettings.System.ModuleNameScheme);
 
-      if (not BuildLanguageModule(LanguageItem, Filename)) then
-        break;
+      if (LanguageModules.ContainsKey(Filename)) then
+      begin
+        TaskMessageDlg(sDuplicateModuleNameTitle, Format(sDuplicateModuleName, [TPath.GetFileName(Filename), LanguageItem.DisplayName]), mtWarning, [mbOK], 0);
+        Exit;
+      end else
+        LanguageModules.Add(Filename, LanguageItem);
     end;
 
+    FProjectIndex := nil;
+
+    FProject.BeginLoad;
+    try
+
+      for var Item in LanguageModules do
+        if (not BuildLanguageModule(Item.Value, Item.Key)) then
+          break;
+
+    finally
+      FProject.EndLoad;
+    end;
   finally
-    FProject.EndLoad;
+    LanguageModules.Free;
   end;
 
   FProjectIndex := FProject.CreatePropertyLookup(TranslationManagerSettings.Editor.SanitizeRules);
@@ -7545,7 +7646,7 @@ begin
     LanguageItem := FProject.TranslationLanguages[i].Language;
 
     BarItemLink := PopupMenuBuild.ItemLinks.AddButton;
-    BarItemLink.Item.Caption := Format('%s...', [LanguageItem.LanguageName]); // Add ellipsis since we're prompting for filename
+    BarItemLink.Item.Caption := Format('%s...', [LanguageItem.DisplayName]); // Add ellipsis since we're prompting for filename
     BarItemLink.Item.Tag := NativeInt(LanguageItem);
     BarItemLink.Item.OnClick := OnBuildSingleLanguageHandler;
     TdxBarButton(BarItemLink.Item).ButtonStyle := bsChecked;

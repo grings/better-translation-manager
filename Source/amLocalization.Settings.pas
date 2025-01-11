@@ -463,7 +463,8 @@ type
     property AutoApplyStopList: boolean read FAutoApplyStopList write FAutoApplyStopList default True;
 
     property IncludeVersionInfo: boolean read FIncludeVersionInfo write FIncludeVersionInfo default True;
-    property ModuleNameScheme: TModuleNameScheme read FModuleNameScheme write FModuleNameScheme;
+    // ModuleNameScheme: Used to default to mnsISO639_2 but that scheme produces duplicates with Windows 10+
+    property ModuleNameScheme: TModuleNameScheme read FModuleNameScheme write FModuleNameScheme default mnsRFC4646;
 
     property ApplicationLanguage: LCID read FApplicationLanguage write FApplicationLanguage;
     property DefaultSourceLocale: string read FDefaultSourceLocale write FDefaultSourceLocale;
@@ -551,6 +552,7 @@ type
     FStopList: TTranslationManagerStopListSettings;
     FProject: TTranslationManagerProjectSettings;
     FParser: TTranslationManagerParserSettings;
+    FMessages: TConfigurationStringValues;
   private
     class function GetFolderInstall: string; static;
   protected
@@ -580,6 +582,7 @@ type
     property StopList: TTranslationManagerStopListSettings read FStopList;
     property Project: TTranslationManagerProjectSettings read FProject;
     property Parser: TTranslationManagerParserSettings read FParser;
+    property Messages: TConfigurationStringValues read FMessages;
   end;
 
 function TranslationManagerSettings: TTranslationManagerSettings;
@@ -856,6 +859,7 @@ begin
   FStopList := TTranslationManagerStopListSettings.Create(Self);
   FProject := TTranslationManagerProjectSettings.Create(Self);
   FParser := TTranslationManagerParserSettings.Create(Self);
+  FMessages := TConfigurationStringValues.Create(Self);
 
   if (Assigned(FOnSettingsCreating)) then
     FOnSettingsCreating(Self);
@@ -878,6 +882,7 @@ begin
   FStopList.Free;
   FProject.Free;
   FParser.Free;
+  FMessages.Free;
 
   inherited;
 end;
@@ -1016,6 +1021,7 @@ begin
   FFirstRun := True;
   FFirstRunThisVersion := True;
   FHideFeedback := True;
+  FModuleNameScheme := mnsRFC4646;
 end;
 
 procedure TTranslationManagerSystemSettings.BeginBoot;

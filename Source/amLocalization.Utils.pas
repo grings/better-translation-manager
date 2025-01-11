@@ -15,7 +15,11 @@ uses
   amLanguageInfo;
 
 type
-  TModuleNameScheme = (mnsISO639_2, mnsISO639_1, mnsRFC4646);
+  TModuleNameScheme = (
+    mnsISO639_2, // Actually, not ISO639-2 since the Delphi RTL uses LOCALE_SABBREVLANGNAME to generate the identifier
+    mnsISO639_1,
+    mnsRFC4646
+  );
 
 type
   LocalizationTools = record

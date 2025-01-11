@@ -3,8 +3,7 @@ inherited FormLanguages: TFormLanguages
   ClientHeight = 371
   ClientWidth = 601
   ExplicitWidth = 617
-  ExplicitHeight = 409
-  PixelsPerInch = 96
+  ExplicitHeight = 410
   TextHeight = 15
   inherited LayoutControlButtons: TdxLayoutControl
     Top = 316
@@ -30,9 +29,8 @@ inherited FormLanguages: TFormLanguages
   inherited LayoutControl: TdxLayoutControl
     Width = 601
     Height = 271
-    ExplicitTop = 45
     ExplicitWidth = 601
-    ExplicitHeight = 275
+    ExplicitHeight = 271
     object ComboBoxSourceLanguage: TcxExtLookupComboBox [0]
       Left = 104
       Top = 7
@@ -43,10 +41,19 @@ inherited FormLanguages: TFormLanguages
     end
     object CheckBoxApplyFilter: TcxCheckBox [1]
       Left = 104
-      Top = 215
+      Top = 188
       Action = ActionApplyFilter
       Style.HotTrack = False
       TabOrder = 1
+      Transparent = True
+    end
+    object CheckBoxHideSupplemental: TcxCheckBox [2]
+      Left = 104
+      Top = 215
+      Action = ActionHideSupplemental
+      Style.HotTrack = False
+      Style.TransparentBorder = False
+      TabOrder = 2
       Transparent = True
     end
     inherited LayoutControlGroup_Root: TdxLayoutGroup
@@ -69,7 +76,7 @@ inherited FormLanguages: TFormLanguages
       CaptionOptions.Text = 'New Group'
       LayoutDirection = ldHorizontal
       ShowBorder = False
-      Index = 4
+      Index = 5
     end
     object LayoutItemTargetLanguage: TdxLayoutItem
       Parent = LayoutControlGroup_Root
@@ -97,6 +104,15 @@ inherited FormLanguages: TFormLanguages
       SizeOptions.Height = 10
       SizeOptions.Width = 10
       CaptionOptions.Text = 'Empty Space Item'
+      Index = 4
+    end
+    object dxLayoutItem1: TdxLayoutItem
+      Parent = LayoutControlGroup_Root
+      CaptionOptions.Text = ' '
+      Control = CheckBoxHideSupplemental
+      ControlOptions.OriginalHeight = 20
+      ControlOptions.OriginalWidth = 269
+      ControlOptions.ShowBorder = False
       Index = 3
     end
   end
@@ -108,6 +124,12 @@ inherited FormLanguages: TFormLanguages
       Caption = '&Filter target language lists with above selection'
       OnExecute = ActionApplyFilterExecute
       OnUpdate = ActionApplyFilterUpdate
+    end
+    object ActionHideSupplemental: TAction
+      AutoCheck = True
+      Caption = '&Hide supplemental locales'
+      Checked = True
+      OnExecute = ActionHideSupplementalExecute
     end
   end
 end
