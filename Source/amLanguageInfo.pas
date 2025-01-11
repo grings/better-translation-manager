@@ -102,7 +102,7 @@ type
     property ISO639_1Name: string read GetISO639_1Name;
 
     /// <summary>ISO639_2Name: The ISO639-2 three letter language/region code.
-    /// E.g. ENU, DAN, DEU etc.</summary>
+    /// E.g. ENG, DAN, DEU etc.</summary>
     property ISO639_2Name: string read GetISO639_2Name;
 
     /// <summary>DisplayName: Localized display name.
@@ -117,6 +117,7 @@ type
     /// E.g. ENU, ENG, DAN, DEU etc.
     /// Note: Not identical to ISO639-2.</summary>
     property LanguageShortName: string read GetLanguageShortName;
+    function HasLanguageShortName: boolean;
 
     /// <summary>Fallback: Fallback locale.
     /// E.g. EN for ENU, DE for DEU, etc.
@@ -1193,6 +1194,15 @@ begin
 end;
 
 //------------------------------------------------------------------------------
+
+function TLanguageItem.HasLanguageShortName: boolean;
+begin
+  // Apparently LOCALE_SABBREVLANGNAME has been deprecated in Windows 10.
+  // It returns ZZZ for language entries added since, probably, Windows 8.
+  // It also returns ZZZ for custom and supplemental locales (See IsCustomLocale).
+  // https://github.com/tpn/winsdk-10/blob/master/Include/10.0.16299.0/um/WinNls.h#L750
+  Result := (LanguageShortName <> 'ZZZ'); // Unfortunately not documented anywhere
+end;
 
 function TLanguageItem.GetLanguageShortName: string;
 begin
