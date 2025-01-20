@@ -71,6 +71,7 @@ type
   ITranslationMemory = interface
     ['{8D4D5538-3A16-4220-9FDF-F88B8A7DED6C}']
     function CreateField(LanguageItem: TLanguageItem): TField;
+    function FieldToLanguage(Field: TField): TLanguageItem;
     function SaveTableTranslationMemoryClone: IInterface;
     function AddTerm(SourceField: TField; const SourceValue, SanitizedSourceValue: string; TargetField: TField; const TargetValue: string;
       Duplicates: TDuplicates; var Stats: TTranslationMemoryMergeStats; DuplicateAction: TTranslationMemoryDuplicateAction): TTranslationMemoryDuplicateAction;

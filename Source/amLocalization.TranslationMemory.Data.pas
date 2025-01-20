@@ -75,6 +75,7 @@ type
   protected
     // ITranslationMemory
     function CreateField(LanguageItem: TLanguageItem): TField;
+    function FieldToLanguage(Field: TField): TLanguageItem;
     function SaveTableTranslationMemoryClone: IInterface;
     function GetTranslationMemoryDataSet: TDataSet;
     function ITranslationMemory.AddTerm = AddTerm;
@@ -709,6 +710,11 @@ begin
   Result.DataSet := TableTranslationMemory;
   Result.DisplayWidth := 100;
   Result.OnGetText := FieldGetTextEventHandler; // Otherwise memo is edited as "(WIDEMEMO)"
+end;
+
+function TDataModuleTranslationMemory.FieldToLanguage(Field: TField): TLanguageItem;
+begin
+  Result := LanguageInfo.FindLocaleName(Field.FieldName);
 end;
 
 function TDataModuleTranslationMemory.GetTranslationMemoryDataSet: TDataSet;

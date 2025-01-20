@@ -29,7 +29,7 @@ uses
   amLanguageInfo,
   amLocalization.Normalization,
   amLocalization.Dialog,
-  amLocalization.TranslationMemory, dxScrollbarAnnotations;
+  amLocalization.TranslationMemory;
 
 type
   ITranslationMemoryFormTools = interface
@@ -324,7 +324,7 @@ resourcestring
   sDeleteLanguage = 'Are you sure you want to delete the "%s" language from the Translation Memory?';
 begin
   Field := TcxGridDBColumn(FPoupMenuColumn).DataBinding.Field;
-  LanguageItem := TLanguageItem(Field.Tag);
+  LanguageItem := FTranslationMemory.FieldToLanguage(Field);
   Assert(LanguageItem <> nil);
 
   if (MessageDlg(Format(sDeleteLanguage, [LanguageItem.LanguageName]), mtConfirmation, [mbYes, mbNo], 0, mbNo) <> mrYes) then
@@ -433,6 +433,7 @@ begin
       FDuplicateColumn.VisibleForCustomization := False;
       FDuplicateColumn.Options.Editing := False;
       FDuplicateColumn.Options.Focusing := False;
+      FDuplicateColumn.FixedKind := fkLeft;
       FDuplicateColumn.Caption := sDuplicate;
       FDuplicateColumn.Width := 150;
       FDuplicateColumn.BestFitMaxWidth := 300;
@@ -456,7 +457,7 @@ begin
     FDuplicateColumn.SortOrder := soAscending;
     FDuplicateColumn.SortIndex := 0;
 
-    FDuplicateColumn.Visible := True;
+    FDuplicateColumn.Visible := (FDuplicateSourceColumn <> nil);
 
     // Get data for duplicate filter
     NeedUpdate(tmUpdateDuplicates);
@@ -748,16 +749,22 @@ var
 begin
   BeginUpdate;
   try
+    if (FDuplicateColumn <> nil) then
+      FDuplicateColumn.Visible := False;
+
     FDuplicateLanguageItem := TLanguageItem(ComboBoxLanguages.ItemObject);
 
     FDuplicateSourceColumn := nil;
     for i := 0 to GridTMDBTableView.ColumnCount-1 do
       if (GridTMDBTableView.Columns[i].DataBinding.Field <> nil) and
-        (TLanguageItem(GridTMDBTableView.Columns[i].DataBinding.Field.Tag) = FDuplicateLanguageItem) then
+        (FTranslationMemory.FieldToLanguage(GridTMDBTableView.Columns[i].DataBinding.Field) = FDuplicateLanguageItem) then
       begin
         FDuplicateSourceColumn := GridTMDBTableView.Columns[i];
         break;
       end;
+
+    if (FDuplicateColumn <> nil) then
+      FDuplicateColumn.Visible := (FDuplicateSourceColumn <> nil);
 
     NeedUpdate(tmUpdateDuplicates);
   finally
@@ -817,7 +824,7 @@ begin
     Column := GridTMDBTableView.Columns[i];
 
     if (Column.DataBinding.Field <> nil) then
-      LanguageItem := TLanguageItem(Column.DataBinding.Field.Tag)
+      LanguageItem := FTranslationMemory.FieldToLanguage(Column.DataBinding.Field)
     else
       LanguageItem := FDuplicateLanguageItem;
 
@@ -872,7 +879,13 @@ var
 begin
   // Duplicate column is unbound. We supply data for it here.
 
-  Assert(FDuplicateSourceColumn <> nil);
+  // Note that this method is called even if the column is hidden, so we cannot
+  // assume that the conditions for its visibility have been satisfied.
+  if (not Sender.Visible) then
+    exit;
+
+  if (FDuplicateSourceColumn = nil) then
+    exit;
 
   Value := VarToStr(GridTMDBTableView.DataController.Values[ARecordIndex, FDuplicateSourceColumn.Index]);
   AText := AnsiLowerCase(SanitizeText(Value, FSanitizeRules));
@@ -893,13 +906,6 @@ procedure TFormTranslationMemory.GridTMDBTableViewCustomDrawCell(Sender: TcxCust
 var
   Flags: DWORD;
 begin
-(* Turns out we really don't need this.
-
-  // We've sneakily stored the language charset in the field tag
-  ACanvas.Font.Charset := TcxGridDBColumn(AViewInfo.Item).DataBinding.Field.Tag;
-
-  // ...Also we no longer store the charset in the tag
-*)
 
   if (FRightToLeft[AViewInfo.Item.Index] <> IsRightToLeft) then
   begin
@@ -951,9 +957,9 @@ begin
       AEdit.BiDiMode := bdLeftToRight;
   end;
 
-  // Store Locale in tag so we can use it when opening the text editor.
+  // Store language in tag so we can use it when opening the text editor.
   // See: TDataModuleMain.EditRepositoryTextItemPropertiesButtonClick
-  AEdit.Tag := TcxGridDBColumn(AItem).DataBinding.Field.Tag;
+  AEdit.Tag := NativeInt(FTranslationMemory.FieldToLanguage(TcxGridDBColumn(AItem).DataBinding.Field));
 end;
 
 procedure TFormTranslationMemory.GridTMDBTableViewStylesGetContentStyle(Sender: TcxCustomGridTableView;
@@ -1006,12 +1012,13 @@ function TFormTranslationMemory.LocatePair(LanguageA: TLanguageItem; const Value
   begin
     // First look for exact match
     for var i := 0 to GridTMDBTableView.ColumnCount-1 do
-      if (GridTMDBTableView.Columns[i].DataBinding.Field <> nil) and (TLanguageItem(GridTMDBTableView.Columns[i].DataBinding.Field.Tag) = LanguageItem) then
+      if (GridTMDBTableView.Columns[i].DataBinding.Field <> nil) and (FTranslationMemory.FieldToLanguage(GridTMDBTableView.Columns[i].DataBinding.Field) = LanguageItem) then
         Exit(GridTMDBTableView.Columns[i].DataBinding.Field);
 
     // Then look for LCID match
+    // TODO : We don't really use LCIDs anymore; Maybe retire this piece of code?
     for var i := 0 to GridTMDBTableView.ColumnCount-1 do
-      if (GridTMDBTableView.Columns[i].DataBinding.Field <> nil) and (TLanguageItem(GridTMDBTableView.Columns[i].DataBinding.Field.Tag).LocaleID = LanguageItem.LocaleID) then
+       if (GridTMDBTableView.Columns[i].DataBinding.Field <> nil) and (FTranslationMemory.FieldToLanguage(GridTMDBTableView.Columns[i].DataBinding.Field).LocaleID = LanguageItem.LocaleID) then
         Exit(GridTMDBTableView.Columns[i].DataBinding.Field);
 
     Result := nil;
