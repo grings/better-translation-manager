@@ -514,6 +514,7 @@ type
     function Traverse(Delegate: TLocalizerTranslationDelegate): boolean; reintroduce; overload;
 
     function HasTranslation(Language: TTranslationLanguage): boolean;
+    function TryGetTranslatedValue(Language: TTranslationLanguage; var TranslatedValue: string): boolean;
 
     property Item: TLocalizerItem read GetParent;
     property Value: string read FValue write SetValue;
@@ -1998,6 +1999,15 @@ begin
     Result := Translation.Value
   else
     Result := Value;
+end;
+
+function TLocalizerProperty.TryGetTranslatedValue(Language: TTranslationLanguage; var TranslatedValue: string): boolean;
+var
+  Translation: TLocalizerTranslation;
+begin
+  Result := (Translations.TryGetTranslation(Language, Translation)) and (Translation.IsTranslated);
+  if (Result) then
+    TranslatedValue := Translation.Value;
 end;
 
 // -----------------------------------------------------------------------------

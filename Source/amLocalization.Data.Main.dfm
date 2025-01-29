@@ -5029,6 +5029,12 @@ object DataModuleMain: TDataModuleMain
     end
     object StyleEven: TcxStyle
     end
+    object StyleSkinDefault: TcxStyle
+    end
+    object StyleSkinSelected: TcxStyle
+    end
+    object StyleSkinSelectedInactive: TcxStyle
+    end
   end
   object SkinController: TdxSkinController
     ScrollbarMode = sbmClassic

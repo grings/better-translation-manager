@@ -243,6 +243,10 @@
         <DCCReference Include="amLocalization.Integration.Tracker.pas"/>
         <DCCReference Include="amLocalization.Application.API.pas"/>
         <DCCReference Include="amLocalization.Utils.AutoGroupByBox.pas"/>
+        <DCCReference Include="amLocalization.Dialog.ApplySameTranslation.pas">
+            <Form>FormApplySameTranslation</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <None Include="..\Bin\Win32\Debug\amTranslationManager.xlat"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>

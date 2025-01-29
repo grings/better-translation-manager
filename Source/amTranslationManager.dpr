@@ -86,7 +86,8 @@ uses
   amLocalization.Integration.Tracker.API in 'amLocalization.Integration.Tracker.API.pas',
   amLocalization.Integration.Tracker in 'amLocalization.Integration.Tracker.pas',
   amLocalization.Application.API in 'amLocalization.Application.API.pas',
-  amLocalization.Utils.AutoGroupByBox in 'amLocalization.Utils.AutoGroupByBox.pas';
+  amLocalization.Utils.AutoGroupByBox in 'amLocalization.Utils.AutoGroupByBox.pas',
+  amLocalization.Dialog.ApplySameTranslation in 'amLocalization.Dialog.ApplySameTranslation.pas' {FormApplySameTranslation};
 
 {$R *.res}
 

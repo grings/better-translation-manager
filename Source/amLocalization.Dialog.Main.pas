@@ -718,7 +718,7 @@ type
     function ViewItem(Item: TLocalizerItem; Exact: boolean): boolean;
     function ViewModule(Module: TLocalizerModule): boolean;
     procedure TranslationAdded(AProp: TLocalizerProperty); overload;
-    procedure TranslationAdded(AProp: TLocalizerProperty; var AutoApplyTranslations, AutoApplyTranslationsSimilar: TTranslationAutoApply; var UpdatedSame, UpdatedSimilar: integer); overload;
+    procedure TranslationAdded(AProp: TLocalizerProperty; PropIndex, PropCount: integer; var PromptOverride: TTranslationAutoApply; var UpdatedSame, UpdatedSimilar: integer); overload;
     procedure DisplayAutoApplyTranslationsStats(UpdatedSame, UpdatedSimilar: integer);
     function ApplyStopList(const Progress: IProgress = nil): TStopListItemList.TStopListStats;
     function RecoverUnusedTranslations(OnlyNew: boolean): integer;
@@ -867,7 +867,8 @@ uses
   amLocalization.Dialog.Feedback,
 {$endif MADEXCEPT}
   amLocalization.Dialog.StopList,
-  amLocalization.Dialog.Import.CSV;
+  amLocalization.Dialog.Import.CSV,
+  amLocalization.Dialog.ApplySameTranslation;
 
 resourcestring
   sLocalizerFindNone = 'None found';
@@ -1266,6 +1267,9 @@ begin
         // https://supportcenter.devexpress.com/ticket/details/t1094717/filter-drop-down-text-isn-t-painted-with-skin-colors
         DockManager.Font.Color := clWindowText;
         *)
+
+        // Repaint in case colors changed
+        GridItems.Invalidate;
       end;
 
     tmaShutdown:
@@ -1991,13 +1995,13 @@ begin
       Counts.UpdatedCount := 0;
       Counts.Count := 0;
 
-      Progress := ShowProgress(Format(sTranslateAutoProgress, [TranslationProvider.ProviderName]));
-      Progress.EnableAbort := True;
-
       FProject.BeginUpdate;
       try
         var TranslatedProps := TList<TLocalizerProperty>.Create;
         try
+
+          Progress := ShowProgress(Format(sTranslateAutoProgress, [TranslationProvider.ProviderName]));
+          Progress.EnableAbort := True;
 
           for i := 0 to SelectionCount-1 do
           begin
@@ -2046,23 +2050,23 @@ begin
               end);
           end;
 
+          Progress.Progress(psEnd, Counts.Count, Counts.ElegibleCount);
+          Progress.Hide;
+          Progress := nil;
+
           // Call TranslationAdded() for all properties that were translated
-          var AutoApplyTranslations := TranslationManagerSettings.Editor.AutoApplyTranslations;
-          var AutoApplyTranslationsSimilar := TranslationManagerSettings.Editor.AutoApplyTranslationsSimilar;
+          var PromptOverride: TTranslationAutoApply := aaPrompt;
           var UpdatedSame := 0;
           var UpdatedSimilar := 0;
-          for var Prop in TranslatedProps do
+          for i := 0 to TranslatedProps.Count-1 do
             // Optionally apply translation to rest of project, reload property
-            TranslationAdded(Prop, AutoApplyTranslations, AutoApplyTranslationsSimilar, UpdatedSame, UpdatedSimilar);
+            TranslationAdded(TranslatedProps[i], i, TranslatedProps.Count, PromptOverride, UpdatedSame, UpdatedSimilar);
 
           DisplayAutoApplyTranslationsStats(UpdatedSame, UpdatedSimilar);
 
         finally
           TranslatedProps.Free;
         end;
-
-        Progress.Progress(psEnd, Counts.Count, Counts.ElegibleCount);
-
       finally
         FProject.EndUpdate;
       end;
@@ -2074,9 +2078,6 @@ begin
   finally
     QueueTranslationMemoryPeek;
   end;
-
-  Progress.Hide;
-  Progress := nil;
 
   RefreshModuleStats;
 
@@ -2386,213 +2387,36 @@ end;
 
 procedure TFormMain.TranslationAdded(AProp: TLocalizerProperty);
 begin
-  var AutoApplyTranslations := TranslationManagerSettings.Editor.AutoApplyTranslations;
-  var AutoApplyTranslationsSimilar := TranslationManagerSettings.Editor.AutoApplyTranslationsSimilar;
+  var PromptOverride: TTranslationAutoApply := aaPrompt;
   var UpdatedSame := 0;
   var UpdatedSimilar := 0;
 
-  TranslationAdded(AProp, AutoApplyTranslations, AutoApplyTranslationsSimilar, UpdatedSame, UpdatedSimilar);
+  TranslationAdded(AProp, 0, 1, PromptOverride, UpdatedSame, UpdatedSimilar);
 
   DisplayAutoApplyTranslationsStats(UpdatedSame, UpdatedSimilar);
 end;
 
-procedure TFormMain.TranslationAdded(AProp: TLocalizerProperty; var AutoApplyTranslations, AutoApplyTranslationsSimilar: TTranslationAutoApply; var UpdatedSame, UpdatedSimilar: integer);
-var
-  SourceValue, TranslatedValue: string;
-  PropertyList: TLocalizerPropertyList;
-  Prop: TLocalizerProperty;
-resourcestring
-  sApplyTranslationCaption = 'Apply translation?';
-  sApplyTranslationTitle = 'Apply the same translation to the following identical value?';
-  sApplySimilarTranslationTitle = 'Apply the same translation to the following similar value?';
-  sApplyTranslationText =
-    '  Module: %s'#13+
-    '  Element: %s'#13+
-    '  Property: %s'#13+
-    '  Value: %s'#13#13+
-    '  Old translation: %s'#13+
-    '  New translation: %s'#13#13+
-    '(%.0n of %.0n)';
-  sApplyTranslationButtonAll = 'Use this choice for all';
+procedure TFormMain.TranslationAdded(AProp: TLocalizerProperty; PropIndex, PropCount: integer; var PromptOverride: TTranslationAutoApply; var UpdatedSame, UpdatedSimilar: integer);
 begin
-  (*
-  ** TODO :
-  ** 1. Check if translation doesn't exist in TM and
-  **    a) Other identical translations of same term exist.
-  **    b) Term exist in TM but with other translation.
-  ** 2. Suggest to user that translation be added to TM:
-  **    "The translation you just made appears to be common.
-  **     It is suggested that you add this translation to the Translation Memory
-  **     so it can be reused for future translations."
-  **
-  *)
-
   ReloadProperty(AProp);
 
-  if (AutoApplyTranslations = aaNever) or (not AProp.HasTranslation(TranslationLanguage)) then
-    Exit;
+  if (PromptOverride =  aaNever) then
+    exit;
 
-  SourceValue := AProp.Value;
-  TranslatedValue := AProp.TranslatedValue[TranslationLanguage];
+  // TODO : Replace with lightweight wrapper or reuse dialog. It is far too heave
+  // to create and then destroy for each call to TranslationAdded.
+  // TODO : Introduce DialogManager...
+  var ApplySameTranslation := TFormApplySameTranslation.Create(TranslationLanguage, FProjectIndex);
+  try
 
-  // Ignore empty source or target
-  if (SourceValue.Trim.IsEmpty) or (TranslatedValue.Trim.IsEmpty) then
-    Exit;
-
-  SaveCursor(crAppStart);
-
-  // Get a list of properties with "similar" source values
-  PropertyList := FProjectIndex.Lookup(AProp);
-
-  if (PropertyList = nil) then
-    Exit;
-
-  // Count props so we can prompt
-  var CountSame := 0;
-  var CountSimilar := 0;
-  for Prop in PropertyList do
-  begin
-    if (Prop = AProp) then
-      continue;
-
-    if (Prop.EffectiveStatus <> ItemStatusTranslate) then
-      continue;
-
-    if (TranslationManagerSettings.Editor.AutoApplyTranslationsExisting) or (not Prop.HasTranslation(TranslationLanguage)) then
-    begin
-      if (SourceValue = Prop.Value) then
-        Inc(CountSame)
-      else
-        Inc(CountSimilar);
-    end;
-  end;
-
-  var IndexSame := 0;
-  var IndexSimilar := 0;
-
-  for Prop in PropertyList do
-  begin
-    if (Prop = AProp) then
-      continue;
-
-    if (Prop.EffectiveStatus <> ItemStatusTranslate) then
-      continue;
-
-    var HasTranslation := Prop.HasTranslation(TranslationLanguage);
-    if (TranslationManagerSettings.Editor.AutoApplyTranslationsExisting) or (not HasTranslation) then
-    begin
-      if (SourceValue = Prop.Value) then
+    ApplySameTranslation.Execute(AProp, PropIndex, PropCount, PromptOverride, UpdatedSame, UpdatedSimilar,
+      procedure(AProp: TLocalizerProperty)
       begin
-        Inc(IndexSame);
+        ReloadProperty(AProp);
+      end);
 
-        var OldTranslation := '';
-        if (HasTranslation) then
-          OldTranslation := Prop.TranslatedValue[TranslationLanguage];
-
-        var Apply := (not HasTranslation) or (OldTranslation <> TranslatedValue);
-
-        // Prompt to translate those that already has a (maybe incorrect) translation
-        if (Apply) and (AutoApplyTranslations = aaPrompt) then
-        begin
-          var TaskDialog := TTaskDialog.Create(nil);
-          try
-            TaskDialog.Caption := sApplyTranslationCaption;
-            TaskDialog.Title := sApplyTranslationTitle;
-            TaskDialog.Text := Format(sApplyTranslationText, [Prop.Item.Module.Name, Prop.Item.Name, Prop.Name, Prop.Value, OldTranslation, TranslatedValue, IndexSame*1.0, CountSame*1.0]);
-            TaskDialog.CommonButtons := [tcbYes, tcbNo, tcbCancel];
-            TaskDialog.VerificationText := sApplyTranslationButtonAll;
-
-            TaskDialog.Execute;
-
-            case TaskDialog.ModalResult of
-              mrYes:
-                begin
-                  Apply := True;
-                  if (tfVerificationFlagChecked in TaskDialog.Flags) then
-                    AutoApplyTranslations := aaAlways
-                end;
-
-              mrNo:
-                begin
-                  Apply := False;
-                  if (tfVerificationFlagChecked in TaskDialog.Flags) then
-                    AutoApplyTranslations := aaNever;
-                end;
-            else
-              AutoApplyTranslations := aaNever;
-              AutoApplyTranslationsSimilar := aaNever;
-              break;
-            end;
-          finally
-            TaskDialog.Free;
-          end;
-        end;
-
-        if (Apply) then
-        begin
-          Prop.TranslatedValue[TranslationLanguage] := TranslatedValue;
-          Inc(UpdatedSame);
-        end;
-      end else
-      if (AutoApplyTranslationsSimilar <> aaNever) then
-      begin
-        Inc(IndexSimilar);
-
-        var OldTranslation := '';
-        if (HasTranslation) then
-          OldTranslation := Prop.TranslatedValue[TranslationLanguage];
-        var NewTranslation := MakeAlike(Prop.Value, TranslatedValue);
-
-        var Apply := (not HasTranslation) or (OldTranslation <> NewTranslation);
-
-        // Prompt to translate those that already has a (maybe incorrect) translation
-        if (Apply) and (AutoApplyTranslationsSimilar = aaPrompt) then
-        begin
-
-          var TaskDialog := TTaskDialog.Create(nil);
-          try
-            TaskDialog.Caption := sApplyTranslationCaption;
-            TaskDialog.Title := sApplySimilarTranslationTitle;
-            TaskDialog.Text := Format(sApplyTranslationText, [Prop.Item.Module.Name, Prop.Item.Name, Prop.Name, Prop.Value, OldTranslation, NewTranslation, IndexSimilar*1.0, CountSimilar*1.0]);
-            TaskDialog.CommonButtons := [tcbYes, tcbNo, tcbCancel];
-            TaskDialog.VerificationText := sApplyTranslationButtonAll;
-
-            TaskDialog.Execute;
-
-            case TaskDialog.ModalResult of
-              mrYes:
-                begin
-                  Apply := True;
-                  if (tfVerificationFlagChecked in TaskDialog.Flags) then
-                    AutoApplyTranslationsSimilar := aaAlways
-                end;
-
-              mrNo:
-                begin
-                  Apply := False;
-                  if (tfVerificationFlagChecked in TaskDialog.Flags) then
-                    AutoApplyTranslationsSimilar := aaNever;
-                end;
-            else
-              AutoApplyTranslations := aaNever;
-              AutoApplyTranslationsSimilar := aaNever;
-              break;
-            end;
-          finally
-            TaskDialog.Free;
-          end;
-        end;
-
-        if (Apply) then
-        begin
-          Prop.TranslatedValue[TranslationLanguage] := NewTranslation;
-          Inc(UpdatedSimilar);
-        end;
-      end else
-        continue;
-
-      ReloadProperty(Prop);
-    end;
+  finally
+    ApplySameTranslation.Free;
   end;
 end;
 
@@ -5277,10 +5101,10 @@ begin
   SaveCursor(crAppStart);
   GridItemsTableView.BeginUpdate;
   try
-    var AutoApplyTranslations := TranslationManagerSettings.Editor.AutoApplyTranslations;
-    var AutoApplyTranslationsSimilar := TranslationManagerSettings.Editor.AutoApplyTranslationsSimilar;
     var UpdatedSame := 0;
     var UpdatedSimilar := 0;
+
+    var PromptOverride: TTranslationAutoApply := aaPrompt;
 
     for i := 0 to GridItemsTableView.Controller.SelectedRecordCount-1 do
     begin
@@ -5294,7 +5118,7 @@ begin
 
       LoadItem(Prop);
 
-      TranslationAdded(Prop, AutoApplyTranslations, AutoApplyTranslationsSimilar, UpdatedSame, UpdatedSimilar);
+      TranslationAdded(Prop, i, GridItemsTableView.Controller.SelectedRecordCount, PromptOverride, UpdatedSame, UpdatedSimilar);
     end;
 
     DisplayAutoApplyTranslationsStats(UpdatedSame, UpdatedSimilar);
@@ -5313,8 +5137,7 @@ begin
   SaveCursor(crAppStart);
   GridItemsTableView.BeginUpdate;
   try
-    var AutoApplyTranslations := TranslationManagerSettings.Editor.AutoApplyTranslations;
-    var AutoApplyTranslationsSimilar := TranslationManagerSettings.Editor.AutoApplyTranslationsSimilar;
+    var PromptOverride: TTranslationAutoApply := aaPrompt;
     var UpdatedSame := 0;
     var UpdatedSimilar := 0;
 
@@ -5328,7 +5151,7 @@ begin
 
       Translation.Status := tStatusProposed;
 
-      TranslationAdded(Prop, AutoApplyTranslations, AutoApplyTranslationsSimilar, UpdatedSame, UpdatedSimilar);
+      TranslationAdded(Prop, i, GridItemsTableView.Controller.SelectedRecordCount, PromptOverride, UpdatedSame, UpdatedSimilar);
     end;
 
     DisplayAutoApplyTranslationsStats(UpdatedSame, UpdatedSimilar);

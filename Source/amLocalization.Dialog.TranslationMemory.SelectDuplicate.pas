@@ -26,8 +26,8 @@ type
   TDuplicateAction = (daPrompt, daFirst, daFirstAll, daSkip, daSkipAll, daAbort);
 
   TFormSelectDuplicate = class(TFormDialog)
-    LayoutItemSourceValue: TdxLayoutItem;
-    LabelSourceValue: TLabel;
+    LayoutItemSource: TdxLayoutItem;
+    LabelSourceValueUnused: TcxLabel;
     ListViewDuplicates: TcxListView;
     LayoutItemTranslationList: TdxLayoutItem;
     CheckBoxAll: TcxCheckBox;
@@ -38,12 +38,17 @@ type
     dxLayoutGroup2: TdxLayoutGroup;
     dxLayoutEmptySpaceItem3: TdxLayoutEmptySpaceItem;
     LayoutItemContext: TdxLayoutItem;
-    LabelContext: TLabel;
+    LabelContextUnused: TcxLabel;
     dxLayoutItem8: TdxLayoutItem;
     CheckBoxApplyToIdentical: TcxCheckBox;
     LayoutItemButtonSkip: TdxLayoutItem;
     ButtonSkip: TcxButton;
     ActionSkip: TAction;
+    LayoutItemContextValue: TdxLayoutLabeledItem;
+    dxLayoutGroup1: TdxLayoutGroup;
+    LayoutItemSourceValue: TdxLayoutLabeledItem;
+    dxLayoutGroup3: TdxLayoutGroup;
+    dxLayoutEmptySpaceItem1: TdxLayoutEmptySpaceItem;
     procedure ActionCancelExecute(Sender: TObject);
     procedure ActionOKExecute(Sender: TObject);
     procedure ActionOKUpdate(Sender: TObject);
@@ -135,12 +140,14 @@ begin
 
   if (not(FDuplicateAction in [daSkipAll, daFirstAll])) then
   begin
-    LabelContext.Caption := Format('%s\%s\%s', [Prop.Item.Module.Name, Prop.Item.Name, Prop.Name]);
-    LabelContext.Hint := LabelContext.Caption;
-    LabelSourceValue.Caption := StringReplace(Prop.Value, #13, ' ', [rfReplaceAll]);
-    LabelSourceValue.Hint := Prop.Value;
+    LayoutItemContextValue.CaptionOptions.Text := Format('%s\%s\%s', [Prop.Item.Module.Name, Prop.Item.Name, Prop.Name]);
+    LayoutItemContextValue.CaptionOptions.Hint := LayoutItemContextValue.CaptionOptions.Text;
+    LayoutItemSourceValue.CaptionOptions.Text := StringReplace(Prop.Value, #13, ' ', [rfReplaceAll]);
+    LayoutItemSourceValue.CaptionOptions.Hint := LayoutItemSourceValue.CaptionOptions.Text;
+
     CheckBoxAll.Checked := (FDuplicateAction in [daSkipAll, daFirstAll]);
     CheckBoxApplyToIdentical.Checked := True;
+
     case FDuplicateAction of
       daPrompt:
         ComboBoxAction.ItemIndex := 0;

@@ -728,6 +728,7 @@ begin
         break;
       end;
   end;
+  // TODO : We need to handle surround in Result but not in SourceValue
 
   if (EqualizeSpace in Rules) then
   begin

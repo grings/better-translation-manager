@@ -95,6 +95,9 @@ type
     LayoutSkinLookAndFeelNoPadding: TdxLayoutSkinLookAndFeel;
     StyleOdd: TcxStyle;
     StyleEven: TcxStyle;
+    StyleSkinDefault: TcxStyle;
+    StyleSkinSelected: TcxStyle;
+    StyleSkinSelectedInactive: TcxStyle;
     procedure DataModuleCreate(Sender: TObject);
     procedure GridTableViewTargetLanguagesDataControllerFilterRecord(ADataController: TcxCustomDataController;
       ARecordIndex: Integer; var Accept: Boolean);
@@ -137,7 +140,7 @@ type
     function GetImageIndex(Prop: TLocalizerProperty; TranslationLanguage: TTranslationLanguage): integer;
     function GetImageHint(ImageIndex: integer): string;
 
-    procedure GetContentStyle(Active, Focused, Selected, Editing: boolean; TranslationLanguage: TTranslationLanguage; Prop: TLocalizerProperty; var AStyle: TcxStyle);
+    function GetContentStyle(Active, Focused, Selected, Editing: boolean; TranslationLanguage: TTranslationLanguage; Prop: TLocalizerProperty; var AStyle: TcxStyle): boolean;
 
     procedure FontSizeChanged(Size: Integer);
 
@@ -362,10 +365,12 @@ begin
   end;
 end;
 
-procedure TDataModuleMain.GetContentStyle(Active, Focused, Selected, Editing: boolean; TranslationLanguage: TTranslationLanguage; Prop: TLocalizerProperty; var AStyle: TcxStyle);
+function TDataModuleMain.GetContentStyle(Active, Focused, Selected, Editing: boolean; TranslationLanguage: TTranslationLanguage; Prop: TLocalizerProperty; var AStyle: TcxStyle): boolean;
 var
   Translation: TLocalizerTranslation;
 begin
+  Result := True;
+
   if (Selected) and (not Active) then
   begin
     AStyle := StyleSelectedInactive;
@@ -382,34 +387,38 @@ begin
     Exit;
   end;
 
-  if (Prop.IsUnused) or (Prop.EffectiveStatus = ItemStatusDontTranslate) then
+  if (Prop <> nil) then
   begin
-    AStyle := StyleDontTranslate;
-    Exit;
-  end;
+    if (Prop.IsUnused) or (Prop.EffectiveStatus = ItemStatusDontTranslate) then
+    begin
+      AStyle := StyleDontTranslate;
+      Exit;
+    end;
 
-  if (Prop.EffectiveStatus = ItemStatusHold) then
-  begin
-    AStyle := StyleHold;
-    Exit;
-  end;
+    if (Prop.EffectiveStatus = ItemStatusHold) then
+    begin
+      AStyle := StyleHold;
+      Exit;
+    end;
 
-  if (not Prop.Translations.TryGetTranslation(TranslationLanguage, Translation)) then
-    Translation := nil;
+    if (not Prop.Translations.TryGetTranslation(TranslationLanguage, Translation)) then
+      Translation := nil;
 
-  if (Translation <> nil) and (Translation.IsTranslated) then
-  begin
-    if (Translation.Status = TTranslationStatus.tStatusProposed) then
-      AStyle := StyleProposed
-    else
-      AStyle := StyleComplete;
+    if (Translation <> nil) and (Translation.IsTranslated) then
+    begin
+      if (Translation.Status = TTranslationStatus.tStatusProposed) then
+        AStyle := StyleProposed
+      else
+        AStyle := StyleComplete;
+    end else
+    if (Prop.Synthesized) then
+    begin
+      AStyle := StyleSynthesized;
+      Exit;
+    end else
+      AStyle := StyleNeedTranslation;
   end else
-  if (Prop.Synthesized) then
-  begin
-    AStyle := StyleSynthesized;
-    Exit;
-  end else
-    AStyle := StyleNeedTranslation;
+    Result := False;
 end;
 
 function TDataModuleMain.GetImageHint(ImageIndex: integer): string;
@@ -580,7 +589,7 @@ var
     if (TranslationManagerSettings.Editor.Style[ListStyleDefault].ColorBackground <> clDefault) then
       Style.Color := TranslationManagerSettings.Editor.Style[ListStyleDefault].ColorBackground
     else
-      Style.Color := clWhite;
+      Style.Color := RootLookAndFeel.Painter.GridLikeControlContentColor;
 
     if (ListStyle.ColorText <> clDefault) then
       Style.TextColor := ListStyle.ColorText
@@ -588,7 +597,7 @@ var
     if (TranslationManagerSettings.Editor.Style[ListStyleDefault].ColorText <> clDefault) then
       Style.TextColor := TranslationManagerSettings.Editor.Style[ListStyleDefault].ColorText
     else
-      Style.TextColor := clBlack;
+      Style.TextColor := RootLookAndFeel.Painter.GridLikeControlContentTextColor;
 
     if (ListStyle.Bold <> -1) then
     begin
@@ -637,12 +646,22 @@ begin
   StyleControllerURL.StyleHot.TextColor := GetHighLightColor(StyleControllerURL.Style.TextColor);
 *)
 
-  // We need the default colors as a style for use in OnGetContentStyle event handlers
-  StyleDefault.Color := RootLookAndFeel.Painter.GridLikeControlContentColor;
-  StyleDefault.TextColor := RootLookAndFeel.Painter.GridLikeControlContentTextColor;
-  // Get default odd/even colors as a style for use in OnGetContentStyle event handlers
+  // StyleSkin* are skins colors that have not been modified in any way.
+  // For use in OnGet*Style event handlers
+  StyleSkinDefault.Color := RootLookAndFeel.Painter.GridLikeControlContentColor;
+  StyleSkinDefault.TextColor := RootLookAndFeel.Painter.GridLikeControlContentTextColor;
+  StyleSkinSelected.Color := RootLookAndFeel.Painter.DefaultSelectionColor;
+  StyleSkinSelected.TextColor := RootLookAndFeel.Painter.DefaultSelectionTextColor;
+  StyleSkinSelectedInactive.Color := RootLookAndFeel.Painter.DefaultInactiveColor;
+  StyleSkinSelectedInactive.TextColor := RootLookAndFeel.Painter.DefaultInactiveTextColor;
+
+  // Default odd/even colors as a style for use in OnGetContentStyle event handlers
   StyleOdd.Color := RootLookAndFeel.Painter.GridLikeControlContentOddColor;
   StyleEven.Color := RootLookAndFeel.Painter.GridLikeControlContentEvenColor;
+
+  // Default colors which will have user customization applied
+  StyleDefault.Color := RootLookAndFeel.Painter.GridLikeControlContentColor;
+  StyleDefault.TextColor := RootLookAndFeel.Painter.GridLikeControlContentTextColor;
 
   DefaultTextColorLuminance := Luminance(RootLookAndFeel.Painter.GridLikeControlContentTextColor);
   DefaultBrushColorLuminance := Luminance(RootLookAndFeel.Painter.GridLikeControlContentColor);

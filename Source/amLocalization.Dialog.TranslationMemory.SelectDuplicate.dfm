@@ -4,8 +4,7 @@ inherited FormSelectDuplicate: TFormSelectDuplicate
   ClientHeight = 355
   ClientWidth = 502
   ExplicitWidth = 518
-  ExplicitHeight = 393
-  PixelsPerInch = 96
+  ExplicitHeight = 394
   TextHeight = 15
   inherited LayoutControlButtons: TdxLayoutControl
     Top = 300
@@ -13,8 +12,8 @@ inherited FormSelectDuplicate: TFormSelectDuplicate
     ExplicitTop = 300
     ExplicitWidth = 502
     inherited ButtonOK: TcxButton
-      Left = 250
-      ExplicitLeft = 250
+      Left = 233
+      ExplicitLeft = 233
     end
     inherited ButtonCancel: TcxButton
       Left = 414
@@ -22,19 +21,18 @@ inherited FormSelectDuplicate: TFormSelectDuplicate
       ExplicitLeft = 414
     end
     object ButtonSkip: TcxButton [2]
-      Left = 332
+      Left = 315
       Top = 13
       Width = 75
       Height = 25
       Action = ActionSkip
-      Default = True
       TabOrder = 1
     end
     inherited LayoutItemButtonCancel: TdxLayoutItem
-      Index = 2
+      Index = 3
     end
     inherited LayoutGroupButtons: TdxLayoutGroup
-      ItemIndex = 1
+      ItemIndex = 2
     end
     object LayoutItemButtonSkip: TdxLayoutItem
       Parent = LayoutGroupButtons
@@ -45,6 +43,14 @@ inherited FormSelectDuplicate: TFormSelectDuplicate
       ControlOptions.OriginalWidth = 75
       ControlOptions.ShowBorder = False
       Index = 1
+    end
+    object dxLayoutEmptySpaceItem1: TdxLayoutEmptySpaceItem
+      Parent = LayoutGroupButtons
+      AlignHorz = ahRight
+      SizeOptions.Height = 10
+      SizeOptions.Width = 10
+      CaptionOptions.Text = 'Empty Space Item'
+      Index = 2
     end
   end
   inherited LayoutControlHeader: TdxLayoutControl
@@ -57,26 +63,24 @@ inherited FormSelectDuplicate: TFormSelectDuplicate
   inherited LayoutControl: TdxLayoutControl
     Width = 502
     Height = 255
-    ExplicitTop = 45
     ExplicitWidth = 502
-    ExplicitHeight = 259
-    object LabelSourceValue: TLabel [0]
-      Left = 80
-      Top = 77
-      Width = 415
-      Height = 16
+    ExplicitHeight = 255
+    object LabelSourceValueUnused: TcxLabel [0]
+      Left = 79
+      Top = 80
       AutoSize = False
-      Caption = '-'
-      EllipsisPosition = epEndEllipsis
-      ShowAccelChar = False
+      Properties.ShowAccelChar = False
+      Properties.ShowEndEllipsis = True
+      TabOrder = 3
       Transparent = True
-      Layout = tlCenter
+      Height = 16
+      Width = 0
     end
     object ListViewDuplicates: TcxListView [1]
-      Left = 80
-      Top = 100
-      Width = 415
-      Height = 121
+      Left = 79
+      Top = 103
+      Width = 416
+      Height = 118
       ColumnClick = False
       Columns = <
         item
@@ -86,12 +90,12 @@ inherited FormSelectDuplicate: TFormSelectDuplicate
       ReadOnly = True
       RowSelect = True
       ShowColumnHeaders = False
-      TabOrder = 2
+      TabOrder = 4
       ViewStyle = vsReport
       OnDblClick = ListViewDuplicatesDblClick
     end
     object CheckBoxAll: TcxCheckBox [2]
-      Left = 296
+      Left = 295
       Top = 7
       Caption = '&Do this for all ambiguities'
       Enabled = False
@@ -101,7 +105,7 @@ inherited FormSelectDuplicate: TFormSelectDuplicate
       Transparent = True
     end
     object ComboBoxAction: TcxComboBox [3]
-      Left = 80
+      Left = 79
       Top = 7
       Properties.DropDownListStyle = lsFixedList
       Properties.Items.Strings = (
@@ -114,38 +118,36 @@ inherited FormSelectDuplicate: TFormSelectDuplicate
       Text = 'Use the translation I select'
       Width = 192
     end
-    object LabelContext: TLabel [4]
-      Left = 80
+    object LabelContextUnused: TcxLabel [4]
+      Left = 79
       Top = 54
-      Width = 415
-      Height = 16
       AutoSize = False
-      Caption = '-'
-      EllipsisPosition = epPathEllipsis
-      ShowAccelChar = False
+      Properties.ShowAccelChar = False
+      Properties.ShowEndEllipsis = True
+      TabOrder = 2
       Transparent = True
-      Layout = tlCenter
+      Height = 19
+      Width = 0
     end
     object CheckBoxApplyToIdentical: TcxCheckBox [5]
-      Left = 80
+      Left = 79
       Top = 228
       Caption = '&Use this translation for identical ambiguities'
       Style.HotTrack = False
-      TabOrder = 3
+      TabOrder = 5
       Transparent = True
     end
     inherited LayoutControlGroup_Root: TdxLayoutGroup
       AlignVert = avClient
-      ItemIndex = 5
+      ItemIndex = 2
     end
-    object LayoutItemSourceValue: TdxLayoutItem
-      Parent = LayoutControlGroup_Root
+    object LayoutItemSource: TdxLayoutItem
+      Parent = dxLayoutGroup3
       CaptionOptions.Text = 'Source text:'
-      Control = LabelSourceValue
-      ControlOptions.OriginalHeight = 14
-      ControlOptions.OriginalWidth = 46
+      Control = LabelSourceValueUnused
+      ControlOptions.OriginalHeight = 16
       ControlOptions.ShowBorder = False
-      Index = 3
+      Index = 0
     end
     object LayoutItemTranslationList: TdxLayoutItem
       Parent = LayoutControlGroup_Root
@@ -201,13 +203,12 @@ inherited FormSelectDuplicate: TFormSelectDuplicate
       Index = 1
     end
     object LayoutItemContext: TdxLayoutItem
-      Parent = LayoutControlGroup_Root
+      Parent = dxLayoutGroup1
       CaptionOptions.Text = 'Context:'
-      Control = LabelContext
-      ControlOptions.OriginalHeight = 14
-      ControlOptions.OriginalWidth = 8
+      Control = LabelContextUnused
+      ControlOptions.OriginalHeight = 19
       ControlOptions.ShowBorder = False
-      Index = 2
+      Index = 0
     end
     object dxLayoutItem8: TdxLayoutItem
       Parent = LayoutControlGroup_Root
@@ -217,6 +218,37 @@ inherited FormSelectDuplicate: TFormSelectDuplicate
       ControlOptions.OriginalWidth = 85
       ControlOptions.ShowBorder = False
       Index = 5
+    end
+    object LayoutItemContextValue: TdxLayoutLabeledItem
+      Parent = dxLayoutGroup1
+      AlignHorz = ahClient
+      CaptionOptions.EllipsisPosition = epPathEllipsis
+      CaptionOptions.ShowAccelChar = False
+      CaptionOptions.Text = '-'
+      Index = 1
+    end
+    object dxLayoutGroup1: TdxLayoutGroup
+      Parent = LayoutControlGroup_Root
+      CaptionOptions.Text = 'New Group'
+      LayoutDirection = ldHorizontal
+      ShowBorder = False
+      Index = 2
+    end
+    object LayoutItemSourceValue: TdxLayoutLabeledItem
+      Parent = dxLayoutGroup3
+      AlignHorz = ahClient
+      CaptionOptions.EllipsisPosition = epEndEllipsis
+      CaptionOptions.ShowAccelChar = False
+      CaptionOptions.Text = '-'
+      Index = 1
+    end
+    object dxLayoutGroup3: TdxLayoutGroup
+      Parent = LayoutControlGroup_Root
+      CaptionOptions.Text = 'New Group'
+      ItemIndex = 1
+      LayoutDirection = ldHorizontal
+      ShowBorder = False
+      Index = 3
     end
   end
   inherited ActionList: TActionList
