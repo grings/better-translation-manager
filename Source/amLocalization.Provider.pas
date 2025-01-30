@@ -259,6 +259,8 @@ begin
 
   Translations := TStringList.Create;
   try
+    Translations.Sorted := True;
+    Translations.Duplicates := dupIgnore;
 
     try
 
