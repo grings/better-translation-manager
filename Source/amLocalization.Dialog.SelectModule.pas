@@ -12,16 +12,20 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, cxGraphics, cxControls, cxLookAndFeels, cxLookAndFeelPainters, cxContainer, cxEdit,
-  dxSkinsCore, Vcl.Menus, dxLayoutcxEditAdapters, dxLayoutControlAdapters, System.Actions, Vcl.ActnList, dxLayoutContainer,
-  cxClasses, Vcl.StdCtrls, cxButtons, dxLayoutControl, cxLookupEdit, cxDBLookupEdit, cxDBExtLookupComboBox, cxTextEdit, cxMaskEdit,
-  cxDropDownEdit,
-  amLocalization.Dialog,
-  amLocalization.Model, Vcl.ExtCtrls, cxLabel;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.Menus, System.Actions, Vcl.ActnList,
+  Vcl.StdCtrls,
 
+  cxGraphics, cxControls, cxLookAndFeels, cxLookAndFeelPainters, cxContainer, cxEdit,
+  dxSkinsCore, dxLayoutcxEditAdapters, dxLayoutControlAdapters, dxLayoutContainer,
+  cxClasses, cxButtons, dxLayoutControl, cxLookupEdit, cxDBLookupEdit, cxDBExtLookupComboBox,
+  cxTextEdit, cxMaskEdit, cxDropDownEdit, cxLabel,
+
+  amLocalization.Dialog,
+  amLocalization.Model,
+  amLocalization.Dialog.SelectModule.API;
 
 type
-  TFormSelectModule = class(TFormDialog)
+  TFormSelectModule = class(TFormDialog, IDialogSelectModule)
     ComboBoxModule: TcxComboBox;
     LayoutItemModule: TdxLayoutItem;
     LayoutItemPrompt: TdxLayoutLabeledItem;
@@ -29,8 +33,9 @@ type
     LayoutEmptySpaceItem2: TdxLayoutEmptySpaceItem;
     procedure ActionOKUpdate(Sender: TObject);
   private
-  public
+    // IDialogSelectModule
     function Execute(Project: TLocalizerProject; const Title: string = ''; const Prompt: string = ''): TLocalizerModule;
+  public
   end;
 
 implementation
@@ -38,6 +43,7 @@ implementation
 {$R *.dfm}
 
 uses
+  amDialog.Manager.API,
   amLocalization.Data.Main;
 
 
@@ -70,4 +76,8 @@ begin
   Result := TLocalizerModule(ComboBoxModule.ItemObject);
 end;
 
+// -----------------------------------------------------------------------------
+
+initialization
+  DialogManager.RegisterDialogClass(IDialogSelectModule, TFormSelectModule);
 end.

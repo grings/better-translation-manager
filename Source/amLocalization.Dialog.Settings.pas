@@ -32,7 +32,8 @@ uses
   dxSpellChecker,
 
   amLocalization.Settings,
-  amLocalization.Dialog;
+  amLocalization.Dialog,
+  amLocalization.Dialog.Settings.API;
 
 type
   // TcxButton interposer
@@ -45,7 +46,7 @@ type
   end;
 
 type
-  TFormSettings = class(TFormDialog)
+  TFormSettings = class(TFormDialog, IDialogSettings)
     ActionFoldersModify: TAction;
     ActionFolderReset: TAction;
     ActionFoldersExplorer: TAction;
@@ -455,16 +456,14 @@ type
   protected
     procedure LoadSettings;
     procedure ApplySettings;
+
+  private
+    // IDialogSettings
+    function Execute(ASpellChecker: TdxSpellChecker; ARibbonStyle: TdxRibbonStyle): boolean;
+    function GetRestartRequired: boolean;
   public
     constructor Create(Awner: TComponent); override;
     destructor Destroy; override;
-
-    function Execute: boolean;
-
-    property SpellChecker: TdxSpellChecker read FSpellChecker write FSpellChecker;
-    property RibbonStyle: TdxRibbonStyle read FRibbonStyle write FRibbonStyle;
-
-    property RestartRequired: boolean read FRestartRequired;
   end;
 
 // -----------------------------------------------------------------------------
@@ -489,7 +488,7 @@ uses
 
   cxStorage,
   dxColorGallery,
-  dxCoreGraphics,
+//  dxCoreGraphics,
   dxSkinInfo,
   dxSkinsStrs,
 
@@ -497,6 +496,7 @@ uses
   amPath,
   amCursorService,
   amLanguageInfo,
+  amDialog.Manager.API,
   amLocalization.Utils,
   amLocalization.Model,
   amLocalization.Settings.SpellChecker,
@@ -595,8 +595,11 @@ end;
 
 // -----------------------------------------------------------------------------
 
-function TFormSettings.Execute: boolean;
+function TFormSettings.Execute(ASpellChecker: TdxSpellChecker; ARibbonStyle: TdxRibbonStyle): boolean;
 begin
+  FSpellChecker := ASpellChecker;
+  FRibbonStyle := ARibbonStyle;
+
   FSpellCheckerAutoCorrectOptions := TdxSpellCheckerAutoCorrectOptions.Create(FSpellChecker);
 
   LoadSettings;
@@ -953,6 +956,13 @@ begin
     GridSynthesizeTableView.DataController.Values[i, GridSynthesizeTableViewColumnValue.Index] :=
       TranslationManagerSettings.Parser.Synthesize.Rules[i].PropertyValue;
   end;
+end;
+
+// -----------------------------------------------------------------------------
+
+function TFormSettings.GetRestartRequired: boolean;
+begin
+  Result := FRestartRequired;
 end;
 
 // -----------------------------------------------------------------------------
@@ -2454,4 +2464,6 @@ end;
 
 // -----------------------------------------------------------------------------
 
+initialization
+  DialogManager.RegisterDialogClass(IDialogSettings, TFormSettings);
 end.

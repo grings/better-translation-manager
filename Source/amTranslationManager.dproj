@@ -168,6 +168,7 @@
         <DCCReference Include="amLocalization.Dialog.Languages.pas">
             <Form>FormLanguages</Form>
         </DCCReference>
+        <DCCReference Include="amLocalization.Dialog.Languages.API.pas"/>
         <DCCReference Include="amLocalization.Data.Main.pas">
             <Form>DataModuleMain</Form>
             <DesignClass>TDataModule</DesignClass>
@@ -195,9 +196,11 @@
         <DCCReference Include="amLocalization.Dialog.Settings.pas">
             <Form>FormSettings</Form>
         </DCCReference>
+        <DCCReference Include="amLocalization.Dialog.Settings.API.pas"/>
         <DCCReference Include="amLocalization.Dialog.SelectModule.pas">
             <Form>FormSelectModule</Form>
         </DCCReference>
+        <DCCReference Include="amLocalization.Dialog.SelectModule.API.pas"/>
         <DCCReference Include="amLocalization.CommandLine.pas"/>
         <DCCReference Include="amLocalization.System.SingleInst.pas"/>
         <DCCReference Include="amLocalization.Shell.pas"/>

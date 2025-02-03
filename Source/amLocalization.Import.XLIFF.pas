@@ -57,7 +57,8 @@ uses
   msxmldom,
   XMLDoc, XMLIntf,
   amLanguageInfo,
-  amLocalization.Dialog.SelectModule;
+  amDialog.Manager.API,
+  amLocalization.Dialog.SelectModule.API;
 
 // -----------------------------------------------------------------------------
 //
@@ -620,7 +621,6 @@ var
   Body: IXMLNode;
   Node: IXMLNode;
   SourceLanguageName, TargetLanguageName: string;
-  FormSelectModule: TFormSelectModule;
 resourcestring
   sXLIFFMissingModuleName = 'The XLIFF file does not specify a module name';
   sXLIFFMissingModuleNamePrompt = 'Please specify which module to import the translations into.';
@@ -726,14 +726,10 @@ begin
     // If we still haven't got a module name then we must ask the user for it.
     if  (Result = nil) then
     begin
-      FormSelectModule := TFormSelectModule.Create(nil);
-      try
-        Result := FormSelectModule.Execute(Project, sXLIFFMissingModuleName, sXLIFFMissingModuleNamePrompt);
-        if (Result = nil) then
-          Exit(nil);
-      finally
-        FormSelectModule.Free;
-      end;
+      var DialogSelectModule := DialogManager.CreateDialog(IDialogSelectModule) as IDialogSelectModule;
+      Result := DialogSelectModule.Execute(Project, sXLIFFMissingModuleName, sXLIFFMissingModuleNamePrompt);
+      if (Result = nil) then
+        Exit(nil);
     end;
   end else
     Result := Project.AddModule(ModuleName);

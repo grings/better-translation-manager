@@ -839,6 +839,8 @@ uses
   amSplash,
   amFileUtils,
   amProgress.Stream,
+  amDialog.Manager, // Reference to register dialog manager
+  amDialog.Manager.API,
 
   amLocalization.System.Restart,
   amLocalization.Utils,
@@ -861,8 +863,8 @@ uses
   amLocalization.Dialog.TextEdit,
   amLocalization.Dialog.NewProject,
   amLocalization.Dialog.TranslationMemory,
-  amLocalization.Dialog.Languages,
-  amLocalization.Dialog.Settings,
+  amLocalization.Dialog.Languages.API,
+  amLocalization.Dialog.Settings.API,
 {$ifdef MADEXCEPT}
   amLocalization.Dialog.Feedback,
 {$endif MADEXCEPT}
@@ -4653,33 +4655,25 @@ end;
 // -----------------------------------------------------------------------------
 
 procedure TFormMain.ActionSettingsExecute(Sender: TObject);
-var
-  FormSettings: TFormSettings;
 begin
-  FormSettings := TFormSettings.Create(nil);
-  try
-    FormSettings.RibbonStyle := RibbonMain.Style;
-    FormSettings.SpellChecker := SpellChecker;
+  var DialogSettings := DialogManager.CreateDialog(IDialogSettings) as IDialogSettings;
 
-    if (not FormSettings.Execute) then
-      Exit;
+  if (not DialogSettings.Execute(SpellChecker, RibbonMain.Style)) then
+    Exit;
 
-    ValidateNamingScheme;
+  ValidateNamingScheme;
 
-    CreateTranslationMemoryPeeker(False);
+  CreateTranslationMemoryPeeker(False);
 
-    // Make sure folders exist and are writable
-    TranslationManagerSettings.Folders.ValidateFolders;
+  // Make sure folders exist and are writable
+  TranslationManagerSettings.Folders.ValidateFolders;
 
-    Notify(tmaSettingsChanged);
+  Notify(tmaSettingsChanged);
 
-    if (FormSettings.RestartRequired) then
-    begin
-      if (not QueueRestart(True)) then
-        exit;
-    end;
-  finally
-    FormSettings.Free;
+  if (DialogSettings.RestartRequired) then
+  begin
+    if (not QueueRestart(True)) then
+      exit;
   end;
 end;
 
@@ -5230,7 +5224,6 @@ end;
 
 procedure TFormMain.BarManagerBarLanguageCaptionButtons0Click(Sender: TObject);
 var
-  FormLanguages: TFormLanguages;
   i: integer;
   Language: TTranslationLanguage;
   PromptCount: integer;
@@ -5243,129 +5236,126 @@ resourcestring
     'There are currently %1:d translations in the %0:s language.'+#13#13+
     'Do you want to remove the language?';
 begin
-  FormLanguages := TFormLanguages.Create(nil);
+  var DialogLanguages := DialogManager.CreateDialog(IDialogLanguages) as IDialogLanguages;
+
+  DialogLanguages.SourceLanguage := SourceLanguage;
+
+  for i := 0 to FProject.TranslationLanguages.Count-1 do
+    DialogLanguages.SelectTargetLanguage(FProject.TranslationLanguages[i].Language);
+
+  DialogLanguages.ApplyFilter := FFilterTargetLanguages;
+
+  if (not DialogLanguages.Execute) then
+    Exit;
+
+  FFilterTargetLanguages := DialogLanguages.ApplyFilter;
+  SourceLanguage := DialogLanguages.SourceLanguage;
+
+  GridItemsTableView.BeginUpdate;
   try
-
-    FormLanguages.SourceLanguage := SourceLanguage;
-
-    for i := 0 to FProject.TranslationLanguages.Count-1 do
-      FormLanguages.SelectTargetLanguage(FProject.TranslationLanguages[i].Language);
-
-    FormLanguages.ApplyFilter := FFilterTargetLanguages;
-
-    if (not FormLanguages.Execute) then
-      Exit;
-
-    FFilterTargetLanguages := FormLanguages.ApplyFilter;
-
-    GridItemsTableView.BeginUpdate;
+    var DeleteLanguages := TList<TTranslationLanguage>.Create;
     try
-      var DeleteLanguages := TList<TTranslationLanguage>.Create;
+      var Languages := TList<TLanguageItem>.Create;
       try
-        var Languages := TList<TLanguageItem>.Create;
-        try
 
-          // Build list of selected languages
-          for i := 0 to FormLanguages.TargetLanguageCount-1 do
-            Languages.Add(FormLanguages.TargetLanguage[i]);
+        // Build list of selected languages
+        for i := 0 to DialogLanguages.TargetLanguageCount-1 do
+          Languages.Add(DialogLanguages.TargetLanguage[i]);
 
-          // Loop though list of current languages and build list of languages to delete
-          PromptCount := 0;
-          for i := FProject.TranslationLanguages.Count-1 downto 0 do
-            if (not Languages.Contains(FProject.TranslationLanguages[i].Language)) then
-            begin
-              DeleteLanguages.Add(FProject.TranslationLanguages[i]);
-
-              if (FProject.TranslationLanguages[i].TranslatedCount > 0) then
-                Inc(PromptCount);
-            end;
-
-        finally
-          Languages.Free;
-        end;
-
-        if (PromptCount > 0) then
-        begin
-          Buttons := [mbYes, mbNo, mbCancel];
-          if (PromptCount > 1) then
-            Include(Buttons, mbYesToAll);
-          for i := DeleteLanguages.Count-1 downto 0 do
+        // Loop though list of current languages and build list of languages to delete
+        PromptCount := 0;
+        for i := FProject.TranslationLanguages.Count-1 downto 0 do
+          if (not Languages.Contains(FProject.TranslationLanguages[i].Language)) then
           begin
-            Language := DeleteLanguages[i];
-            // Prompt user if language contains translations
-            if (Language.TranslatedCount > 0) then
-            begin
-              LanguageItem := Language.Language;
+            DeleteLanguages.Add(FProject.TranslationLanguages[i]);
 
-              Res := TaskMessageDlg(sDeleteLanguageTranslationsTitle,
-                Format(sDeleteLanguageTranslations, [LanguageItem.DisplayName, Language.TranslatedCount]),
-                mtConfirmation, Buttons, 0, mbNo);
-
-              if (Res = mrCancel) then
-                Exit;
-
-              if (Res = mrYesToAll) then
-                break;
-
-              if (Res = mrNo) then
-                DeleteLanguages.Delete(i);
-            end;
+            if (FProject.TranslationLanguages[i].TranslatedCount > 0) then
+              Inc(PromptCount);
           end;
-        end;
-
-        // Remove languages no longer in use
-        SaveCursor(crHourGlass);
-        FProject.BeginUpdate;
-        try
-          for Language in DeleteLanguages do
-          begin
-            // If we delete current target language we must clear references to it in the GUI
-            if (Language = FTranslationLanguage) then
-            begin
-              ClearDependents;
-              ClearTargetLanguage;
-            end;
-
-            // Delete translations
-            FProject.Traverse(
-              function(Prop: TLocalizerProperty): boolean
-              begin
-                Prop.Translations.Remove(Language);
-                Result := True;
-              end);
-
-            Assert(Language.TranslatedCount = 0);
-
-            FProject.TranslationLanguages.Remove(Language.Language);
-          end;
-        finally
-          FProject.EndUpdate;
-        end;
 
       finally
-        DeleteLanguages.Free;
+        Languages.Free;
       end;
 
-      // Add selected languages
-      for i := 0 to FormLanguages.TargetLanguageCount-1 do
-        FProject.TranslationLanguages.Add(FormLanguages.TargetLanguage[i]);
+      if (PromptCount > 0) then
+      begin
+        Buttons := [mbYes, mbNo, mbCancel];
+        if (PromptCount > 1) then
+          Include(Buttons, mbYesToAll);
+        for i := DeleteLanguages.Count-1 downto 0 do
+        begin
+          Language := DeleteLanguages[i];
+          // Prompt user if language contains translations
+          if (Language.TranslatedCount > 0) then
+          begin
+            LanguageItem := Language.Language;
 
-      if (ValidateNamingScheme) then
-      begin // Block to avoid duplicate naming scheme warning
+            Res := TaskMessageDlg(sDeleteLanguageTranslationsTitle,
+              Format(sDeleteLanguageTranslations, [LanguageItem.DisplayName, Language.TranslatedCount]),
+              mtConfirmation, Buttons, 0, mbNo);
 
-        // If we deleted current target language we must select a new one - default to source language
-        if (FTranslationLanguage = nil) then
-          TargetLanguage := SourceLanguage;
+            if (Res = mrCancel) then
+              Exit;
 
+            if (Res = mrYesToAll) then
+              break;
+
+            if (Res = mrNo) then
+              DeleteLanguages.Delete(i);
+          end;
+        end;
+      end;
+
+      // Remove languages no longer in use
+      SaveCursor(crHourGlass);
+      FProject.BeginUpdate;
+      try
+        for Language in DeleteLanguages do
+        begin
+          // If we delete current target language we must clear references to it in the GUI
+          if (Language = FTranslationLanguage) then
+          begin
+            ClearDependents;
+            ClearTargetLanguage;
+          end;
+
+          // Delete translations
+          FProject.Traverse(
+            function(Prop: TLocalizerProperty): boolean
+            begin
+              Prop.Translations.Remove(Language);
+              Result := True;
+            end);
+
+          Assert(Language.TranslatedCount = 0);
+
+          FProject.TranslationLanguages.Remove(Language.Language);
+        end;
+      finally
+        FProject.EndUpdate;
       end;
 
     finally
-      GridItemsTableView.EndUpdate;
+      DeleteLanguages.Free;
+    end;
+
+    // Add selected languages
+    for i := 0 to DialogLanguages.TargetLanguageCount-1 do
+      FProject.TranslationLanguages.Add(DialogLanguages.TargetLanguage[i]);
+
+    if (ValidateNamingScheme) then
+    begin // Block to avoid duplicate naming scheme warning
+
+      // If we deleted current target language we must select a new one - default to source language
+      if (FTranslationLanguage = nil) then
+        TargetLanguage := SourceLanguage;
+
     end;
 
   finally
-    FormLanguages.Free;
+    GridItemsTableView.EndUpdate;
   end;
+
 end;
 
 procedure TFormMain.BarManagerBarProofingCaptionButtons0Click(Sender: TObject);

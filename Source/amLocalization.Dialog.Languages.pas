@@ -26,10 +26,11 @@ uses
   VirtualTrees.Types,
 
   amLanguageInfo,
-  amLocalization.Dialog, dxUIAClasses;
+  amLocalization.Dialog,
+  amLocalization.Dialog.Languages.API;
 
 type
-  TFormLanguages = class(TFormDialog)
+  TFormLanguages = class(TFormDialog, IDialogLanguages)
     ComboBoxSourceLanguage: TcxExtLookupComboBox;
     LayoutItemSourceLanguage: TdxLayoutItem;
     dxLayoutGroup1: TdxLayoutGroup;
@@ -50,29 +51,28 @@ type
     FNodes: TList<PVirtualNode>;
     procedure TreeViewGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
     procedure TreeViewIncrementalSearch(Sender: TBaseVirtualTree; Node: PVirtualNode; const SearchText: string; var Result: Integer);
-  protected
-    function GetApplyFilter: boolean;
-    procedure SetApplyFilter(const Value: boolean);
-    function GetSourceLanguage: TLanguageItem;
-    procedure SetSourceLanguage(const Value: TLanguageItem);
-    function GetTargetLanguageCount: integer;
-    function GetTargetLanguage(Index: integer): TLanguageItem;
 
+  protected
     procedure LoadLanguages;
     function NodeToLanguageItem(Node: PVirtualNode): TLanguageItem;
-  public
-    constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
 
+  private
+    // IDialogLanguages
     function Execute: boolean;
 
     function SelectTargetLanguage(Language: TLanguageItem): boolean;
     procedure ClearTargetLanguages;
 
-    property ApplyFilter: boolean read GetApplyFilter write SetApplyFilter;
+    function GetApplyFilter: boolean;
+    procedure SetApplyFilter(const Value: boolean);
+    function GetSourceLanguage: TLanguageItem;
+    procedure SetSourceLanguage(const Value: TLanguageItem);
     property SourceLanguage: TLanguageItem read GetSourceLanguage write SetSourceLanguage;
-    property TargetLanguageCount: integer read GetTargetLanguageCount;
-    property TargetLanguage[Index: integer]: TLanguageItem read GetTargetLanguage;
+    function GetTargetLanguageCount: integer;
+    function GetTargetLanguage(Index: integer): TLanguageItem;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
   end;
 
 //------------------------------------------------------------------------------
@@ -85,6 +85,7 @@ implementation
 
 uses
   Math,
+  amDialog.Manager.API,
   amLocalization.Data.Main;
 
 
@@ -499,4 +500,8 @@ begin
       Inc(Result);
 end;
 
+// -----------------------------------------------------------------------------
+
+initialization
+  DialogManager.RegisterDialogClass(IDialogLanguages, TFormLanguages);
 end.
