@@ -26,7 +26,7 @@ uses
   dxGDIPlusClasses, cxGridViewLayoutContainer,
   cxGridLayoutView, cxGridCustomLayoutView, cxTextEdit, cxListView, cxCheckComboBox, cxSpinEdit, cxGridLevel, cxGridCustomTableView,
   cxGridTableView, cxGridCustomView, cxGrid, cxDropDownEdit, Vcl.StdCtrls, cxButtons, cxMaskEdit, cxImageComboBox, dxLayoutControl,
-  cxPC, dxColorEdit, cxLookupEdit, cxDBLookupEdit, cxDBExtLookupComboBox, dxColorDialog, dxScrollbarAnnotations,
+  cxPC, dxColorEdit, cxLookupEdit, cxDBLookupEdit, cxDBExtLookupComboBox, dxColorDialog, dxScrollbarAnnotations, dxCoreGraphics,
 
   dxRibbonSkins,
   dxSpellChecker,
@@ -488,7 +488,6 @@ uses
 
   cxStorage,
   dxColorGallery,
-//  dxCoreGraphics,
   dxSkinInfo,
   dxSkinsStrs,
 
