@@ -11,7 +11,9 @@
 interface
 
 uses
-  System.SysUtils, System.Classes,
+  System.SysUtils,
+  System.Classes,
+  System.Diagnostics,
 
   amLanguageInfo,
   amLocalization.Model,
@@ -35,6 +37,16 @@ type
     DeepLAPIAddressFree = 'https://api-free.deepl.com/v2/translate';
     DeepLAPIAddressPro = 'https://api.deepl.com/v2/translate';
   private
+    FMinRequestInterval: integer; // Min delay between requests
+    FLastRequest: TStopWatch; // Time of last request
+    FBackoffCooldown: integer; // Number of requests until backoff recovery
+  private const
+    ThrottleBackoffFactor = 2.0;
+    ThrottleRecoverFactor = 0.75;
+    ThrottleMinRequestInterval = 50; // Minimal delay between requests if rate error occurs
+    ThrottleMaxRequestInterval = 500; // Max delay between requests
+    ThrottleCooldownCount = 10; // After 10 requests, start recovery
+  private
     function GetDeepLAPIAddress: string;
     function GetDeepLAPIKey: string;
     function TranslateText(const ASourceLang, ATargetLang, AText: string): string;
@@ -55,11 +67,12 @@ type
 implementation
 
 uses
-  Dialogs,
+  Vcl.Dialogs,
   System.StrUtils,
   System.Net.HttpClient,
   System.JSON,
   System.Generics.Collections,
+  System.Math,
   amLocalization.Normalization,
   amLocalization.Settings;
 
@@ -141,8 +154,34 @@ begin
       RequestParams.Add('preserve_formatting=1');
       RequestParams.Add('formality=default');
 
-      // Call web service
-      HTTPResponse := RequestClient.Post(DeepLAPIAddress, RequestParams);
+      // Throttle requests
+      if (FLastRequest.IsRunning) and (FLastRequest.ElapsedMilliseconds < FMinRequestInterval) then
+        Sleep(FMinRequestInterval);
+
+      while (True) do
+      begin
+
+        // Call web service
+        HTTPResponse := RequestClient.Post(DeepLAPIAddress, RequestParams);
+
+        FLastRequest := TStopWatch.StartNew;
+
+        if (HTTPResponse <> nil) and (HTTPResponse.StatusCode = 429) then
+        begin
+          FBackoffCooldown := ThrottleCooldownCount;
+
+          if (FMinRequestInterval = 0) then
+            FMinRequestInterval := ThrottleMinRequestInterval
+          else
+          if (FMinRequestInterval < ThrottleMaxRequestInterval) then
+            FMinRequestInterval := Min(ThrottleMaxRequestInterval, Trunc(FMinRequestInterval * ThrottleBackoffFactor)) // Exponential backoff
+          else
+            break;
+        end else
+          break;
+
+      end;
+
     finally
       RequestParams.Free;
     end;
@@ -180,6 +219,21 @@ begin
             Result := (JSONTranslationItem.GetValue('text') as TJSONString).Value;
           finally
             JSONResponse.Free;
+          end;
+
+          // Throttling backoff recovery
+          if (FBackoffCooldown > 0) then
+          begin
+            Dec(FBackoffCooldown);
+
+            if (FBackoffCooldown = 0) then
+            begin
+              FMinRequestInterval := Max(ThrottleMinRequestInterval, Trunc(FMinRequestInterval * ThrottleRecoverFactor));
+
+              if (FMinRequestInterval > ThrottleMinRequestInterval) then
+                // Start counter for next recovery
+                FBackoffCooldown := ThrottleCooldownCount;
+            end;
           end;
         end;
 
