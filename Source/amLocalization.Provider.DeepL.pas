@@ -154,12 +154,11 @@ begin
       RequestParams.Add('preserve_formatting=1');
       RequestParams.Add('formality=default');
 
-      // Throttle requests
-      if (FLastRequest.IsRunning) and (FLastRequest.ElapsedMilliseconds < FMinRequestInterval) then
-        Sleep(FMinRequestInterval);
-
       while (True) do
       begin
+        // Throttle requests
+        if (FLastRequest.IsRunning) and (FLastRequest.ElapsedMilliseconds < FMinRequestInterval) then
+          Sleep(FMinRequestInterval);
 
         // Call web service
         HTTPResponse := RequestClient.Post(DeepLAPIAddress, RequestParams);
