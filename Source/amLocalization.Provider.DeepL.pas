@@ -41,11 +41,11 @@ type
     FLastRequest: TStopWatch; // Time of last request
     FBackoffCooldown: integer; // Number of requests until backoff recovery
   private const
-    ThrottleBackoffFactor = 2.0;
+    ThrottleBackoffFactor = 1.5;
     ThrottleRecoverFactor = 0.75;
     ThrottleMinRequestInterval = 50; // Minimal delay between requests if rate error occurs
-    ThrottleMaxRequestInterval = 500; // Max delay between requests
-    ThrottleCooldownCount = 10; // After 10 requests, start recovery
+    ThrottleMaxRequestInterval = 2000; // Max delay between requests
+    ThrottleCooldownCount = 3; // After X requests, start recovery
   private
     function GetDeepLAPIAddress: string;
     function GetDeepLAPIKey: string;
