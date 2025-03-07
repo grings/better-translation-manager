@@ -25,6 +25,7 @@ object FormMain: TFormMain
     Style = rs2016
     ColorSchemeAccent = rcsaBlue
     ColorSchemeName = 'TheBezier'
+    PopupMenuItems = []
     QuickAccessToolbar.Toolbar = BarManagerBarQuickAccess
     SupportNonClientDrawing = True
     Contexts = <>
