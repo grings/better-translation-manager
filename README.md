@@ -1,7 +1,7 @@
 # Better Translation Manager
 
 https://github.com/andersmelander/better-translation-manager  
-Installer (no source): https://bitbucket.org/anders_melander/better-translation-manager/downloads/
+Download here: https://github.com/andersmelander/better-translation-manager/releases
 
 The Better Translation Manager (BTM) is a replacement for the Delphi Translation Manager a.k.a. the Integrated Translation Environment (ITE) and External Translation Manager (ETM).
 
@@ -29,7 +29,7 @@ The core functionality of the  Better Translation Manager was written in two wee
 * Can import existing translations from compiled application and resource modules or from XLIFF localization source files (dfn, rcn files).
 * Read and save TMX and TBX translation memory files.
 * Import Translation Memory from TMX (Translation Memory eXchange), TBX (TermBase eXchange), Microsoft Glossary and CSV.
-* Machine Translation using Translation Memory, Microsoft Translation Service or Microsoft Terminology Service.
+* Machine Translation using Translation Memory, Microsoft Translation Service or DeepL.
 * Forms, Components, Types and Values that should be ignored can be specified in a Stop List.
 * Translations are Spell Checked.
 * Validation Rules to catch common translation mistakes.
@@ -95,7 +95,7 @@ So returning to our example above, in order to make `HelloWorld.ENU` region neut
 
 ## The Application
 
-In case you just want to use BTM as-is, and don't care to compile it yourself, you can download the application installer here: https://bitbucket.org/anders_melander/better-translation-manager/downloads/
+In case you just want to use BTM as-is, and don't care to compile it yourself, you can download the application installer here: https://github.com/andersmelander/better-translation-manager/releases
 
 Note that the compiled application will almost always lag behind the source code since it has to go through a bit of QA before I upload it. The application has been virus checked with [VirusTotal](https://www.virustotal.com).
 
