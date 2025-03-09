@@ -1,6 +1,6 @@
 # Better Translation Manager
 
-https://bitbucket.org/anders_melander/better-translation-manager  
+https://github.com/andersmelander/better-translation-manager  
 Installer (no source): https://bitbucket.org/anders_melander/better-translation-manager/downloads/
 
 The Better Translation Manager (BTM) is a replacement for the Delphi Translation Manager a.k.a. the Integrated Translation Environment (ITE) and External Translation Manager (ETM).
@@ -58,19 +58,17 @@ Instead I just localize all string values - and only string values.
 4. Translate any new string values.
 5. Build resource modules.
 
-
 ## Getting Started
 
- 1. Compile your application.
- Make sure that the **Output resource string .drc file** linker option has been set.
- 2. Start BTM.
- 3. Select **New project**,  enter the path to your compiled application and specify the current language of the application.
- 4. Select the desired translation language in the Target field.
- 5. Select the module (form or resourcestrings) to translate.
- 6. Translate individual text values.
- 7. Save project.
- 8. Build Resource Modules.
-
+1. Compile your application.
+   Make sure that the **Output resource string .drc file** linker option has been set.
+2. Start BTM.
+3. Select **New project**,  enter the path to your compiled application and specify the current language of the application.
+4. Select the desired translation language in the Target field.
+5. Select the module (form or resourcestrings) to translate.
+6. Translate individual text values.
+7. Save project.
+8. Build Resource Modules.
 
 ## Deploying a Localized Application
 
@@ -84,8 +82,8 @@ If no resource module is found, that matches the language of the  regional setti
 The point is that the Delphi Run Time Library already knows how to load resource modules and how to determine which resource module, if any, should be loaded based on the regional settings of the use.  
 You can read more about this in the Delphi help: http://docwiki.embarcadero.com/RADStudio/Rio/en/Deploying_Localized_Applications [^1]
 
-
 ### Region Neutral translations
+
 One point that the Delphi help doesn't emphasize but which could be important for you is that you can create region neutral resource modules.
 
 When you specify a source or target language you have to specify it as a regional language. That is you cannot just specify the language as "English". You have to include a region. E.g. "English (United States)" or "English (United Kingdom)" etc.  
@@ -95,8 +93,8 @@ Luckily the developers at Borland were smart enough to anticipate this problem w
 
 So returning to our example above, in order to make `HelloWorld.ENU` region neutral you just remove the region part from the filename: `HelloWorld.EN` and now the resource module will be used for all variants of English.
 
-
 ## The Application
+
 In case you just want to use BTM as-is, and don't care to compile it yourself, you can download the application installer here: https://bitbucket.org/anders_melander/better-translation-manager/downloads/
 
 Note that the compiled application will almost always lag behind the source code since it has to go through a bit of QA before I upload it. The application has been virus checked with [VirusTotal](https://www.virustotal.com).
@@ -106,6 +104,7 @@ The installer contains the main application, the command line tool, a sample tra
 Settings are stored in the registry under `HKCU\Software\Melander\TranslationManager` and files are stored in the `%APPDATA%\TranslationManager` folder.
 
 ### Spell Check dictionaries
+
 The spell checker uses dictionaries in the [HunSpell](https://en.wikipedia.org/wiki/Hunspell) format.
 
 It is up to yourself to [find](https://www.google.com/search?client=firefox-b-d&q=hunspell%20dictionary) and download dictionaries.  
@@ -117,17 +116,19 @@ You can find good collections of open source dictionaries here:
 
 * https://github.com/wooorm/dictionaries
 * https://www.freeoffice.com/en/download/dictionaries  
-(the .sox files you can download here are in fact zip files. You will find the .dic and .aff files inside)
+  (the .sox files you can download here are in fact zip files. You will find the .dic and .aff files inside)
 
 Just remember to rename the dictionary files to fit the above rules.
 
 ## The Source
-[The source](https://bitbucket.org/anders_melander/better-translation-manager/src/master/) is available primarily so you can build your own custom versions and to ensure that BTM can be updated if I should get hit by a bus.
 
-I will accept [pull requests](https://bitbucket.org/anders_melander/better-translation-manager/pull-requests/) for bug fixes provided I can reproduce the problem or it is obvious.  
-Pull requests for new features or other changes should be backed by well argued use cases. Start by [creating an issue](https://bitbucket.org/anders_melander/better-translation-manager/issues).
+[The source](https://github.com/andersmelander/better-translation-manager/tree/master/Source) is available primarily so you can build your own custom versions and to ensure that BTM can be updated if I should get hit by a bus.
+
+I will accept [pull requests](https://github.com/andersmelander/better-translation-manager/pulls) for bug fixes provided I can reproduce the problem or it is obvious.  
+Pull requests for new features or other changes should be backed by well argued use cases. Start by [creating an issue](https://github.com/andersmelander/better-translation-manager/issues).
 
 ### License
+
 The source code is released under the MPL 2.0 license:
 
 > Copyright © 2019-2021 Anders Melander  
@@ -135,15 +136,16 @@ The source code is released under the MPL 2.0 license:
 > License, v. 2.0. If a copy of the MPL was not distributed with this  
 > file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
 ### Requirements
+
 BTM has been tested with the following versions but probably works with older (and newer) versions too:
 
-* Delphi 11.0
-* DevExpress VCL version 21.2.5
-* madCollection 2.8.11.0
+* Delphi 12.1
+* DevExpress VCL version 24.1.3
+* madExcept 5.1.4
 
 ### Dependencies
+
 The following commercial 3rd party libraries are required in order to compile the source:
 
 * [DevExpress VCL](https://www.devexpress.com/products/vcl/)
@@ -152,6 +154,7 @@ The following commercial 3rd party libraries are required in order to compile th
 The libraries must in the Delphi default library search path.
 
 ## Command Line Interface
+
 For use in automated build systems the `amResourceModuleBuilder` command line utility is provided. Using this tool you can build resource module for specific languages or for all languages supported by a given translation project.
 
     Usage: amResourceModuleBuilder <projectfile> [options]
