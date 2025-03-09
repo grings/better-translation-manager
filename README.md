@@ -112,10 +112,11 @@ To add a new dictionary you must copy the dictionary files to the `%APPDATA%\Tra
 The dictionary for a language is contained in two files; `language.dic` and `language.aff` where "language" is specified as one of the [ISO639-2](https://en.wikipedia.org/wiki/ISO_639-2), [ISO639-1](https://en.wikipedia.org/wiki/ISO_639-1) or [RFC 4646](https://tools.ietf.org/html/rfc4646)/[IETF](https://en.wikipedia.org/wiki/IETF_language_tag) language codes.  
 For example the dictionary files for Danish should be named `dan.dic` and `dan.aff`, `da.dic` and `da.aff` or `da-DK.dic` and `da-DK.aff` - or any combination of these.
 
-You can find good collections of open source dictionaries here:
+You can find some good collections of open source dictionaries here:
 
 * https://github.com/wooorm/dictionaries
-* https://www.freeoffice.com/en/download/dictionaries  
+* https://github.com/LibreOffice/dictionaries
+* https://web.archive.org/web/20231215134708/https://www.softmaker.com/en/download/dictionaries  
   (the .sox files you can download here are in fact zip files. You will find the .dic and .aff files inside)
 
 Just remember to rename the dictionary files to fit the above rules.
