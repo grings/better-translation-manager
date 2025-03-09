@@ -38,7 +38,7 @@ uses
   UITypes,
   IOUtils,
   Registry,
-  amLocale,
+  amLanguageInfo,
   amLocalization.Utils;
 
 procedure TFormMain.ButtonAddClick(Sender: TObject);
@@ -66,7 +66,7 @@ end;
 
 procedure TFormMain.PopulateLanguagesMenu;
 
-  function IsLanguageModule(const Filename: string; LocaleID: LCID; var LocaleName: string): boolean;
+  function IsLanguageModule(const Filename: string; LanguageItem: TLanguageItem; var LocaleName: string): boolean;
   var
     ModuleNameScheme: TModuleNameScheme;
     BaseFilename: string;
@@ -76,7 +76,7 @@ procedure TFormMain.PopulateLanguagesMenu;
     BaseFilename := TPath.GetFileName(Filename);
     for ModuleNameScheme := Low(TModuleNameScheme) to High(TModuleNameScheme) do
     begin
-      ModuleFilename := LocalizationTools.BuildModuleFilename(BaseFilename, LocaleID, ModuleNameScheme);
+      ModuleFilename := LocalizationTools.BuildModuleFilename(BaseFilename, LanguageItem, ModuleNameScheme);
 
       if (SameText(BaseFilename, ModuleFilename)) then
       begin
@@ -88,7 +88,7 @@ procedure TFormMain.PopulateLanguagesMenu;
     end;
   end;
 
-  procedure AddLanguage(const Caption, LocaleName: string; Default: boolean);
+  procedure AddLanguage(const Caption, LocaleName: string; Default: boolean); overload;
   var
     MenuItem: TMenuItem;
   begin
@@ -103,45 +103,52 @@ procedure TFormMain.PopulateLanguagesMenu;
     MenuItemLanguage.Add(MenuItem);
   end;
 
+  procedure AddLanguage(LanguageItem: TLanguageItem; const LocaleName: string; Default: boolean); overload;
+  begin
+    AddLanguage(LanguageItem.DisplayName, LocaleName, Default);
+  end;
+
 var
   FileMask: string;
   Filename: string;
-  i: integer;
   LocaleName: string;
-  DefaultLocaleItem: TLocaleItem;
-  LocaleItem: TLocaleItem;
+  DefaultLanguageItem: TLanguageItem;
+  NativeLanguageItem: TLanguageItem;
+  LanguageItem: TLanguageItem;
 resourcestring
   sDefaultLanguage = 'Automatic: %s';
 begin
   // Populate sub menu with available languages
   MenuItemLanguage.Clear;
 
-  DefaultLocaleItem := TLocaleItems.FindLCID(GetThreadUILanguage);
+  DefaultLanguageItem := LanguageInfo.FindLCID(GetThreadUILanguage);
 
   // Native application language is en-US
-  LocaleItem := TLocaleItems.FindLCID($00000409);
-  if (LocaleItem <> nil) then
-    AddLanguage(LocaleItem.LanguageName, 'ENU', (LocaleItem = DefaultLocaleItem));
+  NativeLanguageItem := LanguageInfo.FindLocaleName('en-US'); // LCID: $00000409
+  if (NativeLanguageItem <> nil) then
+    AddLanguage(NativeLanguageItem, 'en-US', (NativeLanguageItem = DefaultLanguageItem));
 
   // Look for files with the same name as the application
   FileMask := TPath.ChangeExtension(TPath.GetFileName(Application.ExeName), '.*');
   for Filename in TDirectory.GetFiles(TPath.GetDirectoryName(Application.ExeName), FileMask) do
     // For each filename see if it matches a language module filename for any of the known locales
-    for i := 0 to TLocaleItems.Count-1 do
+    for LanguageItem in LanguageInfo do
     begin
-      LocaleItem := TLocaleItems.Items[i];
-      if (IsLanguageModule(Filename, LocaleItem.Locale, LocaleName)) then
+      if (LanguageItem = NativeLanguageItem) then
+        continue; // We already have that one in the menu
+
+      if (IsLanguageModule(Filename, LanguageItem, LocaleName)) then
       begin
         // Found a match. Add a menu item.
-        AddLanguage(LocaleItem.LanguageName, LocaleName, (LocaleItem = DefaultLocaleItem));
+        AddLanguage(LanguageItem, LocaleName, (LanguageItem = DefaultLanguageItem));
         break;
       end;
     end;
 
   MenuItemLanguage.NewBottomLine;
   // User default language
-  if (DefaultLocaleItem <> nil) then
-    AddLanguage(Format(sDefaultLanguage, [DefaultLocaleItem.LanguageName]), '', False);
+  if (DefaultLanguageItem <> nil) then
+    AddLanguage(Format(sDefaultLanguage, [DefaultLanguageItem.LanguageName]), '', False);
 end;
 
 procedure TFormMain.SelectLanguage(Sender: TObject);
