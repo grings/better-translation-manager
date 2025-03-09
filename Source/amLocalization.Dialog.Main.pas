@@ -829,6 +829,7 @@ uses
   cxDrawTextUtils,
   dxBarExtItems,
   dxCoreGraphics, // To avoid inlining hint
+  cxGeometry, // To avoid inlining hint
 
   DelphiDabbler.SingleInstance,
 

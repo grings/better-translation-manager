@@ -121,17 +121,22 @@ type
   private
     FExceptionCount: integer;
     FExceptionInfoProviders: TList<IExceptionInfoProvider>;
+
   private
     procedure Trace(const Topic, Msg: string);
+
+  protected // "protected" to shut compiler up about unused private methods
     // Registered exception handlers
     procedure MadExceptGlobalHandler(const exceptIntf: IMEException; var handled: boolean);
     procedure MadExceptHandlerSynced(const exceptIntf: IMEException; var handled: boolean);
     procedure MadExceptHandler(const exceptIntf: IMEException; var handled: boolean);
+
   private
     // IExceptionHandler
     procedure ExceptionHandler(const ExceptIntf: IUnknown; var Handled: boolean);
     procedure RegisterExceptionInfoProvider(const ExceptionInfoProvider: IExceptionInfoProvider);
     procedure UnregisterExceptionInfoProvider(const ExceptionInfoProvider: IExceptionInfoProvider);
+
   public
     constructor Create;
     destructor Destroy; override;

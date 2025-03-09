@@ -10,7 +10,6 @@
 
 {$APPTYPE CONSOLE}
 
-{$R *.res}
 {$R amTranslationManager.res}
 
 
