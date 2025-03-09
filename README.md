@@ -1,6 +1,10 @@
 # Better Translation Manager
 
-https://bitbucket.org/anders_melander/better-translation-manager  
+### BTM has moved to Github: https://github.com/andersmelander/better-translation-manager
+This clone will no longer be maintained.
+
+---------------------------
+
 Installer (no source): https://bitbucket.org/anders_melander/better-translation-manager/downloads/
 
 The Better Translation Manager (BTM) is a replacement for the Delphi Translation Manager a.k.a. the Integrated Translation Environment (ITE) and External Translation Manager (ETM).
@@ -122,10 +126,10 @@ You can find good collections of open source dictionaries here:
 Just remember to rename the dictionary files to fit the above rules.
 
 ## The Source
-[The source](https://bitbucket.org/anders_melander/better-translation-manager/src/master/) is available primarily so you can build your own custom versions and to ensure that BTM can be updated if I should get hit by a bus.
+[The source](https://github.com/andersmelander/better-translation-manager/tree/master/Source) is available primarily so you can build your own custom versions and to ensure that BTM can be updated if I should get hit by a bus.
 
-I will accept [pull requests](https://bitbucket.org/anders_melander/better-translation-manager/pull-requests/) for bug fixes provided I can reproduce the problem or it is obvious.  
-Pull requests for new features or other changes should be backed by well argued use cases. Start by [creating an issue](https://bitbucket.org/anders_melander/better-translation-manager/issues).
+I will accept [pull requests](https://github.com/andersmelander/better-translation-manager/pulls) for bug fixes provided I can reproduce the problem or it is obvious.  
+Pull requests for new features or other changes should be backed by well argued use cases. Start by [creating an issue](https://github.com/andersmelander/better-translation-manager/issues).
 
 ### License
 The source code is released under the MPL 2.0 license:
