@@ -284,6 +284,7 @@ resourcestring
   sUnsupportedFutureVersion = 'The translation project file requires a newer version of Better Translation Manager.'#13+
     'This version, %s, supports project file formats up to version %s.'#13+
     'The file was saved with version %s in project file format version %s.';
+  sBadFile = 'Malformed project file; The file can not be loaded.'#13'%s';
 begin
   if (Progress <> nil) then
     Progress.UpdateMessage(sProgressProjectLoad);
@@ -296,7 +297,16 @@ begin
   XML := TXMLDocument.Create(nil);
   XML.Options := XML.Options + [doAttrNull];
   XML.ParseOptions := XML.ParseOptions + [poPreserveWhiteSpace];
-  XML.LoadFromStream(Stream);
+
+  try
+
+    XML.LoadFromStream(Stream);
+
+  except
+    on E: Exception do
+      // madExcept eats the inner exception so we have to pass its info in the new exception
+      Exception.RaiseOuterException(ELocalizationPersistence.CreateFmt(sBadFile, [E.Message]));
+  end;
 
   RootNode := XML.ChildNodes[sLocalizationFileformatRoot];
   if (RootNode = nil) then
