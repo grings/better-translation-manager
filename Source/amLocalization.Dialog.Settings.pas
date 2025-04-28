@@ -323,6 +323,8 @@ type
     dxLayoutLabeledItem3: TdxLayoutLabeledItem;
     dxLayoutGroup1: TdxLayoutGroup;
     dxLayoutGroup2: TdxLayoutGroup;
+    dxLayoutItem26: TdxLayoutItem;
+    CheckBoxFileProjectSaveTransient: TcxCheckBox;
     procedure TextEditTranslatorMSAPIKeyPropertiesButtonClick(Sender: TObject; AButtonIndex: Integer);
     procedure TextEditTranslatorMSAPIKeyPropertiesChange(Sender: TObject);
     procedure ActionCategoryExecute(Sender: TObject);
@@ -678,6 +680,7 @@ begin
   CheckBoxFileProjectOmitDontTranslate.Checked := not TranslationManagerSettings.Project.SaveDontTranslate;
   CheckBoxFileProjectSaveNewState.Checked := TranslationManagerSettings.Project.SaveNewState;
   CheckBoxFileProjectSort.Checked := TranslationManagerSettings.Project.SaveSorted;
+  CheckBoxFileProjectSaveTransient.Checked := TranslationManagerSettings.Project.SaveTransient;
 
   (*
   ** Proofing section
@@ -772,6 +775,7 @@ begin
   TranslationManagerSettings.Project.SaveDontTranslate := not CheckBoxFileProjectOmitDontTranslate.Checked;
   TranslationManagerSettings.Project.SaveNewState := CheckBoxFileProjectSaveNewState.Checked;
   TranslationManagerSettings.Project.SaveSorted := CheckBoxFileProjectSort.Checked;
+  TranslationManagerSettings.Project.SaveTransient := CheckBoxFileProjectSaveTransient.Checked;
 
   (*
   ** Proofing section

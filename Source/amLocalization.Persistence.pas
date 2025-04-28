@@ -24,7 +24,7 @@ uses
 // Save and load project.
 // -----------------------------------------------------------------------------
 type
-  TLocalizationSaveOption = (soOmitDontTranslateItems, soSort, soOmitNewState);
+  TLocalizationSaveOption = (soOmitDontTranslateItems, soSort, soOmitNewState, soTransient);
   TLocalizationSaveOptions = set of TLocalizationSaveOption;
 
   TLocalizationLoadProperties = record
@@ -596,7 +596,8 @@ begin
 
   Node := RootNode.AddChild('meta');
   Node.AddChild('version').Text := IntToStr(LocalizationFileFormatVersionCurrent);
-  Node.AddChild('created').Text := DateToISO8601(Now, False);
+  if (soTransient in AOptions) then
+    Node.AddChild('created').Text := DateToISO8601(Now, False);
   Node.AddChild('tool').Text := TPath.GetFileNameWithoutExtension(ParamStr(0));
   Node.AddChild('toolversion').Text := TVersionInfo.FileVersionString(ParamStr(0));
 
@@ -610,6 +611,8 @@ begin
   Node.AddChild('sorted').Text := (soSort in AOptions).ToString(TUseBoolStrs.True);
   // Indicate if State="New" is saved
   Node.AddChild('omitnewstate').Text := (soOmitNewState in AOptions).ToString(TUseBoolStrs.True);
+  // Indicate if purely transient/informationmal attributes are saved
+  Node.AddChild('transient').Text := (soTransient in AOptions).ToString(TUseBoolStrs.True);
 
 
   ProjectNode := RootNode.AddChild('project');
@@ -617,14 +620,16 @@ begin
   ProjectNode.Attributes['sourcefile'] := Project.SourceFilename;
   ProjectNode.Attributes['stringsymbolfile'] := Project.StringSymbolFilename;
   ProjectNode.Attributes['language'] := Project.SourceLanguage.LocaleName;
-  ProjectNode.Attributes['properties'] := Project.StatusCount[ItemStatusTranslate];
+  if (soTransient in AOptions) then
+    ProjectNode.Attributes['properties'] := Project.StatusCount[ItemStatusTranslate];
 
   LanguagesNode := ProjectNode.AddChild('targetlanguages');
   for i := 0 to Project.TranslationLanguages.Count-1 do
   begin
     LanguageNode := LanguagesNode.AddChild('language');
     LanguageNode.Attributes['language'] := Project.TranslationLanguages[i].Language.LocaleName;
-    LanguageNode.Attributes['translated'] := Project.TranslationLanguages[i].TranslatedCount;
+    if (soTransient in AOptions) then
+      LanguageNode.Attributes['translated'] := Project.TranslationLanguages[i].TranslatedCount;
   end;
 
   ModulesNode := ProjectNode.AddChild('modules');
@@ -650,7 +655,8 @@ begin
     if (soOmitDontTranslateItems in AOptions) and (Module.Status = ItemStatusDontTranslate) then
       continue;
 
-    ModuleNode.Attributes['properties'] := Module.StatusCount[ItemStatusTranslate];
+    if (soTransient in AOptions) then
+      ModuleNode.Attributes['properties'] := Module.StatusCount[ItemStatusTranslate];
 
     ItemsNode := nil;
 

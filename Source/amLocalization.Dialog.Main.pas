@@ -6065,6 +6065,8 @@ begin
             Include(Options, soSort);
           if (not TranslationManagerSettings.Project.SaveNewState) then
             Include(Options, soOmitNewState);
+          if (TranslationManagerSettings.Project.SaveTransient) then
+            Include(Options, soTransient);
 
           TLocalizationProjectFiler.SaveToFile(FProject, Filename, Options, Progress);
 

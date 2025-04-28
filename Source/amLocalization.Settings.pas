@@ -480,10 +480,12 @@ type
     FSaveDontTranslate: boolean;
     FSaveNewState: boolean;
     FSaveSorted: boolean;
+    FSaveTransient: boolean;
   published
     property SaveDontTranslate: boolean read FSaveDontTranslate write FSaveDontTranslate default True;
     property SaveNewState: boolean read FSaveNewState write FSaveNewState default False;
     property SaveSorted: boolean read FSaveSorted write FSaveSorted default True;
+    property SaveTransient: boolean read FSaveTransient write FSaveTransient default False;
   end;
 
 type
