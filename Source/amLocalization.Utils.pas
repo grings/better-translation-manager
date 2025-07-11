@@ -69,6 +69,7 @@ class function LocalizationTools.BuildModuleFilename(const BaseFilename: string;
   LocaleID: LCID; ModuleNameScheme: TModuleNameScheme): string;
 begin
   var LanguageItem := LanguageInfo.FindLCID(LocaleID);
+
   if (LanguageItem <> nil) then
     Result := BuildModuleFilename(BaseFilename, LanguageItem, ModuleNameScheme)
   else
@@ -79,6 +80,7 @@ class function LocalizationTools.BuildModuleFilename(const BaseFilename: string;
   const LocaleName: string; ModuleNameScheme: TModuleNameScheme): string;
 begin
   var LanguageItem := LanguageInfo.FindLocaleName(LocaleName);
+
   if (LanguageItem <> nil) then
     Result := BuildModuleFilename(BaseFilename, LanguageItem, ModuleNameScheme)
   else
@@ -89,9 +91,7 @@ end;
 
 class function LocalizationTools.LoadResourceModule(LanguageItem: TLanguageItem): boolean;
 var
-  Module: HModule;
   ModuleFilename: string;
-  ApplicationVersion, ModuleVersion: string;
 const
   // Do not localize - localizations has not yet been loaded
   sResourceModuleOutOfSync = 'The resource module for the current language (%s) appears to be out of sync with the application.'+#13#13+
@@ -106,34 +106,39 @@ const
   MaxAgeDifference = 0;
 {$endif DEBUG}
 begin
-  Module := LoadNewResourceModule(LanguageItem, ModuleFilename);
+  Result := False;
 
-  Result := (Module <> 0) and (ModuleFilename <> '');
-  
-  if (Result) then
+  // LanguageItem=nil means "Use default"
+  if (LanguageItem <> nil) then
   begin
-    ApplicationVersion := TVersionInfo.FileVersionString(ParamStr(0));
-    // Note: GetModuleFileName (used by GetModuleName) can not be used with modules loaded with LOAD_LIBRARY_AS_DATAFILE
-    ModuleVersion := TVersionInfo.FileVersionString(ModuleFilename);
+    var Module := LoadNewResourceModule(LanguageItem, ModuleFilename);
 
-    if (ApplicationVersion <> ModuleVersion) then
+    Result := (Module <> 0) and (ModuleFilename <> '');
+
+    // Verify VersionInfo
+    if (Result) then
     begin
-      Result := False;
-      LoadNewResourceModule(nil, ModuleFilename);
-      MessageDlg(Format(sResourceModuleOutOfSync, [LanguageItem.LanguageName, ApplicationVersion, ModuleVersion])+sResourceModuleFallback, mtWarning, [mbOK], 0);
-      exit;
+      var ApplicationVersion := TVersionInfo.FileVersionString(ParamStr(0));
+      // Note: GetModuleFileName (used by GetModuleName) can not be used with modules loaded with LOAD_LIBRARY_AS_DATAFILE
+      var ModuleVersion := TVersionInfo.FileVersionString(ModuleFilename);
+
+      if (ApplicationVersion <> ModuleVersion) then
+      begin
+        Result := False;
+        MessageDlg(Format(sResourceModuleOutOfSync, [LanguageItem.LanguageName, ApplicationVersion, ModuleVersion])+sResourceModuleFallback, mtWarning, [mbOK], 0);
+      end;
     end;
-  end;
 
-  if (Result) then
-  begin
-    var AgeDifference := Ceil(TFile.GetLastWriteTime(ParamStr(0)) - TFile.GetLastWriteTime(ModuleFilename));
-    if (AgeDifference > MaxAgeDifference) then
+    // Verify timestamp
+    if (Result) then
     begin
-      Result := False;
-      LoadNewResourceModule(nil, ModuleFilename);
-      MessageDlg(Format(sResourceModuleTooOld, [LanguageItem.LanguageName, AgeDifference])+sResourceModuleFallback, mtWarning, [mbOK], 0);
-      exit;
+      var AgeDifference := Ceil(TFile.GetLastWriteTime(ParamStr(0)) - TFile.GetLastWriteTime(ModuleFilename));
+
+      if (AgeDifference > MaxAgeDifference) then
+      begin
+        Result := False;
+        MessageDlg(Format(sResourceModuleTooOld, [LanguageItem.LanguageName, AgeDifference])+sResourceModuleFallback, mtWarning, [mbOK], 0);
+      end;
     end;
   end;
 
@@ -148,16 +153,15 @@ const
   sResourceModuleUnknownLanguage = 'Unknown language ID: %d'+#13#13+
     'The default language will be used instead.';
 begin
-  Result := False;
+  var LanguageItem: TLanguageItem := nil;
 
-  if (LocaleID = 0) then
-    Exit;
-
-  var LanguageItem := LanguageInfo.FindLCID(LocaleID);
-  if (LanguageItem = nil) then
+  // LocaleID=0 means "Use default"
+  if (LocaleID <> 0) then
   begin
-    MessageDlg(Format(sResourceModuleUnknownLanguage, [LocaleID]), mtWarning, [mbOK], 0);
-    Exit;
+    LanguageItem := LanguageInfo.FindLCID(LocaleID);
+
+    if (LanguageItem = nil) then
+      MessageDlg(Format(sResourceModuleUnknownLanguage, [LocaleID]), mtWarning, [mbOK], 0);
   end;
 
   Result := LoadResourceModule(LanguageItem);
@@ -169,16 +173,15 @@ const
   sResourceModuleUnknownLanguage = 'Unknown language: %s'+#13#13+
     'The default language will be used instead.';
 begin
-  Result := False;
+  var LanguageItem: TLanguageItem := nil;
 
-  if (LocaleName = '') then
-    Exit;
-
-  var LanguageItem := LanguageInfo.FindLocaleName(LocaleName);
-  if (LanguageItem = nil) then
+  // LocaleName='' means "Use default"
+  if (LocaleName <> '') then
   begin
-    MessageDlg(Format(sResourceModuleUnknownLanguage, [LocaleName]), mtWarning, [mbOK], 0);
-    Exit;
+    LanguageItem := LanguageInfo.FindLocaleName(LocaleName);
+
+    if (LanguageItem = nil) then
+      MessageDlg(Format(sResourceModuleUnknownLanguage, [LocaleName]), mtWarning, [mbOK], 0);
   end;
 
   Result := LoadResourceModule(LanguageItem);
