@@ -97,7 +97,7 @@ const
   sResourceModuleOutOfSync = 'The resource module for the current language (%s) appears to be out of sync with the application.'+#13#13+
     'Application version: %s'+#13+
     'Resource module version: %s';
-  sResourceModuleTooOld = 'The resource module for the current language (%s) is older than the application (by %d days).';
+  sResourceModuleTooOld = 'The timestamp of the resource module for the current language (%s) does not match the timestamp of the application (difference: %d days).';
   sResourceModuleFallback = #13#13+'The default language will be used instead.';
 const
 {$ifdef DEBUG}
@@ -132,7 +132,7 @@ begin
     // Verify timestamp
     if (Result) then
     begin
-      var AgeDifference := Ceil(TFile.GetLastWriteTime(ParamStr(0)) - TFile.GetLastWriteTime(ModuleFilename));
+      var AgeDifference := Ceil(Abs(TFile.GetLastWriteTime(ParamStr(0)) - TFile.GetLastWriteTime(ModuleFilename)));
 
       if (AgeDifference > MaxAgeDifference) then
       begin
