@@ -16,13 +16,13 @@ uses
 
 //------------------------------------------------------------------------------
 //
-//      IGlyphService
+//      ICursorService
 //
 //------------------------------------------------------------------------------
 type
   ICursorService = interface
     ['{9866F659-1FC2-4B35-86DE-8429B2F4142E}']
-    function RegisterCursor(const ResourceID: UnicodeString; Default: TCursor): TCursor;
+    function RegisterCursor(const AResourceID: UnicodeString; ADefault: TCursor = crArrow): TCursor;
   end;
 
 function CursorService: ICursorService;
@@ -46,12 +46,32 @@ type
   end;
 
 
+//------------------------------------------------------------------------------
+//
+//      SaveCursor
+//
+//------------------------------------------------------------------------------
+// Save current cursor and, optionally, set a new cursor.
+// Returns a reference counted interface.
+// Most common usage is to simply call SaveCursor, ignore the returned value,
+// and let the automatic interface reference counting handle the cleanup:
+//
+//   begin
+//     SaveCursor(crHourglass);
+//     ...do some stuff...
+//   end; // cursor is automatically restored here
+//
+//------------------------------------------------------------------------------
 function SaveCursor(NewCursor: TCursor = crNone; ImmediateUpdate: boolean = False): ICursorRecall;
 function SaveCursorScoped(NewCursor: TCursor = crNone; ImmediateUpdate: boolean = False): TSaveCursor;
 
 // Use UpdateCursor to force immediate update of cursor
 procedure UpdateCursor;
 
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 implementation
 
@@ -91,8 +111,11 @@ var
 //------------------------------------------------------------------------------
 type
   TCursorRecall = class(TInterfacedObject, ICursorRecall)
-  private
+  strict private
+    class var [weak] FCurrentCursor: ICursorRecall; // Cursor stack head
+  strict private
     FSavedCursor: TCursor;
+    FPreviousCursor: ICursorRecall; // Cursor stack link to previous
   public
     constructor Create(NewCursor: TCursor = crNone; ImmediateUpdate: boolean = False);
     destructor Destroy; override;
@@ -105,11 +128,21 @@ constructor TCursorRecall.Create(NewCursor: TCursor; ImmediateUpdate: boolean);
 begin
   inherited Create;
 
+  // Maintain stack of cursors to ensure that we recall the cursors in the
+  // correct order: The recall order should be the reverse of the store order.
+  // Otherwise we can end up with an order like this:
+  //   A.Store: crDefault->crHourGlass
+  //   B.Store: crHourGlass->crHourGlass
+  //   A.Recall: ->crDefault
+  //   B.Recall: ->crHourGlass
+  FPreviousCursor := FCurrentCursor;
+  FCurrentCursor := Self;
+
   Store;
 
   if (NewCursor <> crNone) then
   begin
-    // Reset screen cursor if it has come out of sync with windows cursor.
+    // Reset Screen.Cursor if it has gone out of sync with Windows' cursor.
     // Otherwise setting Screen.Cursor might have no effect.
     if (Screen.Cursor = NewCursor) and (Windows.GetCursor <> Screen.Cursors[Screen.Cursor]) then
       Screen.Cursor := crNone;
@@ -124,6 +157,10 @@ destructor TCursorRecall.Destroy;
 begin
   if (FSavedCursor <> crNone) then
     Screen.Cursor := FSavedCursor;
+
+  // Pop from stack if we are the last (i.e current) entry
+  if (TCursorRecall(FCurrentCursor) = Self) then
+    FCurrentCursor := FPreviousCursor;
 
   inherited Destroy;
 end;
@@ -177,7 +214,7 @@ end;
 
 //------------------------------------------------------------------------------
 //
-//      TCursorService
+//      TCursorService / ICursorService
 //
 //------------------------------------------------------------------------------
 type
@@ -187,7 +224,7 @@ type
     FCursors: TObjectList<TCustomCursor>;
   protected
     // ICursorService
-    function RegisterCursor(const ResourceID: UnicodeString; Default: TCursor): TCursor;
+    function RegisterCursor(const AResourceID: UnicodeString; ADefault: TCursor): TCursor;
 
     procedure ClearCursors;
   public
@@ -238,7 +275,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-function TCursorService.RegisterCursor(const ResourceID: UnicodeString; Default: TCursor): TCursor;
+function TCursorService.RegisterCursor(const AResourceID: UnicodeString; ADefault: TCursor): TCursor;
 
   function ResourceIdentToString(Ident: PWideChar): UnicodeString;
   begin
@@ -259,8 +296,9 @@ var
   Ident: string;
   CustomCursor: TCustomCursor;
   DefaultCursor: HCursor;
+  NewCursor: HCursor;
 begin
-  Ident := ResourceIdentToString(PWideChar(ResourceID));
+  Ident := ResourceIdentToString(PWideChar(AResourceID));
 
   i := FCursors.Count-1;
 
@@ -288,18 +326,24 @@ begin
     // Find first unused entry
     while (Screen.Cursors[CustomCursor.Index] <> DefaultCursor) do
       inc(CustomCursor.Index);
-//    CustomCursor.Handle := LoadCursor(HInstance, ResourceID);
-//    CustomCursor.Handle := LoadImageW(HInstance, PWideChar(ResourceID), IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE or LR_SHARED);
-    CustomCursor.Handle := LoadImageW(HInstance, PWideChar(ResourceID), IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE);
+//    CustomCursor.Handle := LoadCursor(HInstance, AResourceID);
+//    CustomCursor.Handle := LoadImageW(HInstance, PWideChar(AResourceID), IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE or LR_SHARED);
+    NewCursor := LoadImageW(HInstance, PWideChar(AResourceID), IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE);
 
-    // Fall back to system cross cursor
-    if (CustomCursor.Handle = 0) then
-      CustomCursor.Handle := LoadCursor(0, IDC_CROSS);
-
-    Screen.Cursors[CustomCursor.Index] := CustomCursor.Handle;
-  end;
-
-  Result := CustomCursor.Index;
+    if (NewCursor <> 0) then
+    begin
+      CustomCursor.Handle := NewCursor;
+      Screen.Cursors[CustomCursor.Index] := NewCursor;
+      Result := CustomCursor.Index;
+    end else
+    begin
+      // Fall back to default cursor (crArrow by default)
+      if (CustomCursor.Handle = 0) then
+        FCursors.Remove(CustomCursor);
+      Result := ADefault;
+    end;
+  end else
+    Result := CustomCursor.Index;
 end;
 
 //------------------------------------------------------------------------------
