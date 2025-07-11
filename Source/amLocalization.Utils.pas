@@ -31,6 +31,19 @@ type
     class function BuildModuleFilename(const BaseFilename: string; const LocaleName: string; ModuleNameScheme: TModuleNameScheme): string; overload; static;
   end;
 
+var
+  // Max allowed timestamp difference, in minutes, between exe-file and resource module.
+  ResourceModuleMaxAgeDifference: integer =
+{$ifdef DEBUG}
+    // Allow module being a bit out of date during development
+    60
+{$else DEBUG}
+    // Allow a small difference so files having been extracted from a zip by Windows explorer
+    // (which doesn't preserve the original timestamps) doesn't cause failure.
+    5
+{$endif DEBUG}
+    ;
+
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -43,6 +56,7 @@ uses
   Dialogs,
   Controls,
   SysUtils,
+  DateUtils,
   IOUtils,
   amVersionInfo;
 
@@ -90,6 +104,33 @@ end;
 // -----------------------------------------------------------------------------
 
 class function LocalizationTools.LoadResourceModule(LanguageItem: TLanguageItem): boolean;
+
+  function AppendString(const s, value: string): string;
+  begin
+    if (s <> '') then
+      Result := s + ', ' + value
+    else
+      Result := value;
+  end;
+
+  function AgeToString(AgeInMinutes: integer): string;
+  begin
+    Result := '';
+    var n: UInt64;
+    var Remainder: UInt64;
+
+    DivMod(AgeInMinutes, 60*24, n, Remainder);
+    if (n <> 0) then
+      Result := AppendString(Result, Format('%d days', [n]));
+
+    DivMod(Remainder, 60, n, Remainder);
+    if (n <> 0) then
+      Result := AppendString(Result, Format('%d hours', [n]));
+
+    if (Remainder <> 0) then
+      Result := AppendString(Result, Format('%d minutes', [Remainder]));
+  end;
+
 var
   ModuleFilename: string;
 const
@@ -97,14 +138,8 @@ const
   sResourceModuleOutOfSync = 'The resource module for the current language (%s) appears to be out of sync with the application.'+#13#13+
     'Application version: %s'+#13+
     'Resource module version: %s';
-  sResourceModuleTooOld = 'The timestamp of the resource module for the current language (%s) does not match the timestamp of the application (difference: %d days).';
+  sResourceModuleTooOld = 'The timestamp of the resource module for the current language (%s) does not match the timestamp of the application (difference: %s).';
   sResourceModuleFallback = #13#13+'The default language will be used instead.';
-const
-{$ifdef DEBUG}
-  MaxAgeDifference = 1; // Allow module being a bit out of date during development
-{$else DEBUG}
-  MaxAgeDifference = 0;
-{$endif DEBUG}
 begin
   Result := False;
 
@@ -118,6 +153,7 @@ begin
     // Verify VersionInfo
     if (Result) then
     begin
+
       var ApplicationVersion := TVersionInfo.FileVersionString(ParamStr(0));
       // Note: GetModuleFileName (used by GetModuleName) can not be used with modules loaded with LOAD_LIBRARY_AS_DATAFILE
       var ModuleVersion := TVersionInfo.FileVersionString(ModuleFilename);
@@ -132,12 +168,14 @@ begin
     // Verify timestamp
     if (Result) then
     begin
-      var AgeDifference := Ceil(Abs(TFile.GetLastWriteTime(ParamStr(0)) - TFile.GetLastWriteTime(ModuleFilename)));
 
-      if (AgeDifference > MaxAgeDifference) then
+      var AgeDifference := MinutesBetween(TFile.GetLastWriteTime(ParamStr(0)), TFile.GetLastWriteTime(ModuleFilename));
+
+      if (AgeDifference > ResourceModuleMaxAgeDifference) then
       begin
         Result := False;
-        MessageDlg(Format(sResourceModuleTooOld, [LanguageItem.LanguageName, AgeDifference])+sResourceModuleFallback, mtWarning, [mbOK], 0);
+        var s := AgeToString(AgeDifference);
+        MessageDlg(Format(sResourceModuleTooOld, [LanguageItem.LanguageName, s])+sResourceModuleFallback, mtWarning, [mbOK], 0);
       end;
     end;
   end;
