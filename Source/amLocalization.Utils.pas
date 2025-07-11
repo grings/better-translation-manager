@@ -38,6 +38,7 @@ type
 implementation
 
 uses
+  Math,
   UITypes,
   Dialogs,
   Controls,
@@ -95,14 +96,21 @@ const
   // Do not localize - localizations has not yet been loaded
   sResourceModuleOutOfSync = 'The resource module for the current language (%s) appears to be out of sync with the application.'+#13#13+
     'Application version: %s'+#13+
-    'Resource module version: %s'+#13#13+
-    'The default language will be used instead.';
+    'Resource module version: %s';
+  sResourceModuleTooOld = 'The resource module for the current language (%s) is older than the application (by %d days).';
+  sResourceModuleFallback = #13#13+'The default language will be used instead.';
+const
+{$ifdef DEBUG}
+  MaxAgeDifference = 1; // Allow module being a bit out of date during development
+{$else DEBUG}
+  MaxAgeDifference = 0;
+{$endif DEBUG}
 begin
-  Result := False;
-
   Module := LoadNewResourceModule(LanguageItem, ModuleFilename);
 
-  if (Module <> 0) and (ModuleFilename <> '') then
+  Result := (Module <> 0) and (ModuleFilename <> '');
+  
+  if (Result) then
   begin
     ApplicationVersion := TVersionInfo.FileVersionString(ParamStr(0));
     // Note: GetModuleFileName (used by GetModuleName) can not be used with modules loaded with LOAD_LIBRARY_AS_DATAFILE
@@ -110,11 +118,26 @@ begin
 
     if (ApplicationVersion <> ModuleVersion) then
     begin
+      Result := False;
       LoadNewResourceModule(nil, ModuleFilename);
-      MessageDlg(Format(sResourceModuleOutOfSync, [LanguageItem.LanguageName, ApplicationVersion, ModuleVersion]), mtWarning, [mbOK], 0);
-    end else
-      Result := True;
-  end else
+      MessageDlg(Format(sResourceModuleOutOfSync, [LanguageItem.LanguageName, ApplicationVersion, ModuleVersion])+sResourceModuleFallback, mtWarning, [mbOK], 0);
+      exit;
+    end;
+  end;
+
+  if (Result) then
+  begin
+    var AgeDifference := Ceil(TFile.GetLastWriteTime(ParamStr(0)) - TFile.GetLastWriteTime(ModuleFilename));
+    if (AgeDifference > MaxAgeDifference) then
+    begin
+      Result := False;
+      LoadNewResourceModule(nil, ModuleFilename);
+      MessageDlg(Format(sResourceModuleTooOld, [LanguageItem.LanguageName, AgeDifference])+sResourceModuleFallback, mtWarning, [mbOK], 0);
+      exit;
+    end;
+  end;
+
+  if (not Result) then
     // Use default application language if we failed to load a resource module
     LoadNewResourceModule(nil, ModuleFilename);
 end;
