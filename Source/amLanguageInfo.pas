@@ -229,6 +229,13 @@ function LoadNewResourceModule(const LocaleName: string): HModule; overload;
 function LoadNewResourceModule(LocaleItem: TLanguageItem): HModule; overload;
 function LoadNewResourceModule(LocaleItem: TLanguageItem; var ModuleFilename: string): HModule; overload;
 
+var
+  // Semi-colon delimited list of paths that LoadNewResourceModule will search
+  // when loading a resource module.
+  // Relative paths are relative to the application folder.
+  // Leave empty to only search the application folder.
+  ResourceModulePaths: string = '';
+
 
 //------------------------------------------------------------------------------
 //
@@ -495,11 +502,37 @@ function LoadNewResourceModule(LocaleItem: TLanguageItem; var ModuleFilename: st
 const
   LOAD_LIBRARY_AS_IMAGE_RESOURCE = $00000020;
 
+  function FindResourceModule(var ModuleFilename: string): boolean;
+  begin
+    var Directory := TPath.GetDirectoryName(ModuleFilename);
+    var Filename := TPath.GetFileName(ModuleFilename);
+
+    // Search the list of sub-folders for the resource module
+    var SubFolders := ResourceModulePaths.Split([';']);
+
+    // If no sub-folders then just look in the application folder
+    if (Length(SubFolders) = 0) then
+    begin
+      Result := TFile.Exists(ModuleFilename);
+      exit;
+    end;
+
+    for var SubFolder in SubFolders do
+    begin
+      ModuleFilename := TPath.Combine(TPath.Combine(Directory, SubFolder), Filename);
+
+      if (TFile.Exists(ModuleFilename)) then
+        Exit(True);
+    end;
+
+    Result := False;
+  end;
+
   function LoadResourceModule(const Filename: string; const FileType: string; var ModuleFilename: string): HModule;
   begin
     ModuleFilename := TPath.ChangeExtension(Filename, '.'+FileType);
 
-    if (not TFile.Exists(ModuleFilename)) then
+    if (not FindResourceModule(ModuleFilename)) then
       Exit(0);
 
     Result := LoadLibraryEx(PChar(ModuleFilename), 0, LOAD_LIBRARY_AS_DATAFILE or LOAD_LIBRARY_AS_IMAGE_RESOURCE);
