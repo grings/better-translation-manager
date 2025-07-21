@@ -39,6 +39,7 @@ uses
   IOUtils,
   Registry,
   amLanguageInfo,
+  amVersionInfo,
   amLocalization.Utils;
 
 procedure TFormMain.ButtonAddClick(Sender: TObject);
@@ -112,9 +113,12 @@ var
   FileMask: string;
   Filename: string;
   LocaleName: string;
+  VersionInfo: TVersionInfo;
   DefaultLanguageItem: TLanguageItem;
   NativeLanguageItem: TLanguageItem;
   LanguageItem: TLanguageItem;
+const
+  sDefaultNativeLocale = 'en-US';  // LCID: $00000409
 resourcestring
   sDefaultLanguage = 'Automatic: %s';
 begin
@@ -123,10 +127,20 @@ begin
 
   DefaultLanguageItem := LanguageInfo.FindLCID(GetThreadUILanguage);
 
-  // Native application language is en-US
-  NativeLanguageItem := LanguageInfo.FindLocaleName('en-US'); // LCID: $00000409
+  VersionInfo := TVersionInfo.Create(Application.ExeName);
+  try
+    if (VersionInfo.TranslationCount > 0) then
+      // Get native language from VersionInfo
+      NativeLanguageItem := LanguageInfo.FindLCID(VersionInfo.LanguageID[0])
+    else
+      // Fall back to en-US (or whatever)
+      NativeLanguageItem := LanguageInfo.FindLocaleName(sDefaultNativeLocale);
+  finally
+    VersionInfo.Free;
+  end;
+
   if (NativeLanguageItem <> nil) then
-    AddLanguage(NativeLanguageItem, 'en-US', (NativeLanguageItem = DefaultLanguageItem));
+    AddLanguage(NativeLanguageItem, NativeLanguageItem.LocaleName, (NativeLanguageItem = DefaultLanguageItem));
 
   // Look for files with the same name as the application
   FileMask := TPath.ChangeExtension(TPath.GetFileName(Application.ExeName), '.*');
