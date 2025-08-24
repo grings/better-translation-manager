@@ -183,7 +183,7 @@ uses
 
 const
   // Line break character.
-  // #10 and #13 in the source CSV is converted to this character
+  // #10, #13, and #13#10 in the source CSV is converted to this character
   CsvLineBreak: Char = #13;
 
 // -----------------------------------------------------------------------------
@@ -431,24 +431,10 @@ begin
           break;
       end;
 
-      if (BufChar = #13) then
+      if (CharInSet(BufChar, [#10, #13])) then
       begin
         // Ignore LF after CR
-        if (Reader.Peek = 10) then
-          Reader.Read;
-
-        if (not Quoted) then
-        begin
-          // End row
-          EOL := True;
-          break;
-        end else
-          StuffChar(CsvLineBreak);
-      end else
-      if (BufChar = #10) then
-      begin
-        // Ignore CR after LF
-        if (Reader.Peek = 13) then
+        if (BufChar = #13) and (Reader.Peek = 10) then
           Reader.Read;
 
         if (not Quoted) then
