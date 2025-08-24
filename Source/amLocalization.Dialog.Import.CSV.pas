@@ -907,6 +907,7 @@ begin
   FSettings := TCsvSettings.Default;
   LoadEncodings;
   Codepage := FSettings.Codepage;
+  FMapMode := [mmID];
 
   Result := (ShowModal = mrOK);
 end;
