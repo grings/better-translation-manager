@@ -1463,7 +1463,8 @@ var
     for var i := 0 to High(Translations) do
     begin
       var TargetValue := Values[Translations[i].Index];
-      if (TargetValue = SourceValue) then
+
+      if (TargetValue = '') or (TargetValue = SourceValue) then
       begin
         Inc(FTranslationCount.CountSkipped);
         continue;
