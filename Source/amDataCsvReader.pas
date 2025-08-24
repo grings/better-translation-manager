@@ -395,13 +395,17 @@ begin
       // Quote handling
       // Not in quote mode:
       // - A quote at start of field starts quote mode.
+      // - A quote not at start of field is an error.
       // In quote mode:
-      // - Double quote emits a quote.
-      // - Single quote ends quote mode.
+      // - Double-quote emits a quote.
+      // - Single-quote ends quote mode.
       if (BufChar = Settings.QuoteChar) and ((Count = 0) or (Quoted)) then
       begin
         // Two consecutive quote chars outputs a single quote char.
-        if (Char(Reader.Peek) = Settings.QuoteChar) then
+        // However, since double-quote is only allowed when the field is quoted,
+        // a double-quote at the start is actually two single-quotes; I.e. an
+        // empty, quoted field.
+        if (Count > 0) and (Quoted) and (Char(Reader.Peek) = Settings.QuoteChar) then
         begin
           // Skip next quote char and save current
           StuffChar(BufChar);
