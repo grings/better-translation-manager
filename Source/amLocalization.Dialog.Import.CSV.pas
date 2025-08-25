@@ -562,6 +562,64 @@ end;
 
 // -----------------------------------------------------------------------------
 //
+//      Compare two strings, disregarding different linebreak types
+//
+// -----------------------------------------------------------------------------
+function SameTextIgnoreLinebreaks(const A, B: string): boolean;
+begin
+  var pA := PChar(A);
+  var pB := PChar(B);
+
+  var CurrentA := pA^;
+  var CurrentB := pB^;
+
+  while (CurrentA <> #0) and (CurrentB <> #0) do
+  begin
+    Inc(pA);
+    Inc(pB);
+
+    var NextA := pA^;
+    var NextB := pB^;
+
+    // Convert #13#10 to #13 and #10 to #13
+    if (NextA = #10) then
+    begin
+      if (CurrentA = #13) then
+      begin
+        // #13#10 - skip #10
+        Inc(pA);
+        NextA := pA^;
+      end else
+        // Convert #10 to #13
+        NextA := #13;
+    end;
+
+    if (NextB = #10) then
+    begin
+      if (CurrentB = #13) then
+      begin
+        // #13#10 - skip #10
+        Inc(pB);
+        NextB := pB^;
+      end else
+        // Convert #10 to #13
+        NextB := #13;
+    end;
+
+    // Compare
+    if (CurrentA <> CurrentB) then
+      Exit(False);
+
+    CurrentA := NextA;
+    CurrentB := NextB;
+  end;
+
+  Result := (CurrentA = CurrentB); // Both #0 or strings not the same length
+end;
+
+
+// -----------------------------------------------------------------------------
+//
 //              TPreviewStream
 //
 // -----------------------------------------------------------------------------
@@ -1411,7 +1469,7 @@ begin
       if (ApplyMakeAlike) then
         TargetValue := MakeAlike(Prop.Value, TargetValue);
 
-      if (Translation.Value <> TargetValue) then
+      if (Translation.Value <> TargetValue) and (not SameTextIgnoreLinebreaks(Translation.Value, TargetValue)) then
       begin
         Translation.Update(TargetValue);
         Inc(FTranslationCount.CountUpdated);
@@ -1487,7 +1545,8 @@ var
     if (Result >= MatchSame) then
       exit
     else
-    if (AnsiSameText(Prop.Value, SourceValue)) then
+    if (SameTextIgnoreLinebreaks(Prop.Value, SourceValue)) then
+//    if (AnsiSameText(Prop.Value, SourceValue)) then
       Result := MatchSame
     else
     if (Matchness >= MatchSanitized) then
@@ -1584,15 +1643,24 @@ begin
                       if (Prop.EffectiveStatus = ItemStatusTranslate) then
                       begin
                         Matchness := MatchExact;
+
                         if (SourceIndex <> -1) then
                         begin
                           SourceValue := Values[SourceIndex];
+
                           if (SourceValue <> Prop.Value) then
                           begin
-                            // Do not import obsolete translations
-                            Warning('Source value obsolete: %s.%s.%s', [ModuleName, Values[ItemIndex], Values[PropIndex]]);
-                            Prop := nil;
-                            Skip := True;
+                            // CSV import cannot represent different linebreak types so an
+                            // imported linebreak might not match the original line break
+                            // type. Compare the string again while disregarding linebreak
+                            // type:
+                            if (not SameTextIgnoreLinebreaks(SourceValue, Prop.Value)) then
+                            begin
+                              // Do not import obsolete translations
+                              Warning('Source value obsolete: %s.%s.%s', [ModuleName, Values[ItemIndex], Values[PropIndex]]);
+                              Prop := nil;
+                              Skip := True;
+                            end;
                           end;
                         end else
                           SourceValue := Prop.Value;
@@ -1620,7 +1688,8 @@ begin
                 // Maybe refactor this into a common function
 
                 // Try to locate term in project
-                var List := ProjectPropertyLookup.Lookup(SanitizeText(SourceValue));
+                var SanitizedText := SanitizeText(SourceValue);
+                var List := ProjectPropertyLookup.Lookup(SanitizedText);
 
                 if (List <> nil) and (List.Count > 0) then
                 begin
