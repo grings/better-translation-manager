@@ -1657,7 +1657,7 @@ begin
                             if (not SameTextIgnoreLinebreaks(SourceValue, Prop.Value)) then
                             begin
                               // Do not import obsolete translations
-                              Warning('Source value obsolete: %s.%s.%s', [ModuleName, Values[ItemIndex], Values[PropIndex]]);
+                              Warning('Source value changed; Translation obsolete: %s.%s.%s', [ModuleName, Values[ItemIndex], Values[PropIndex]]);
                               Prop := nil;
                               Skip := True;
                             end;

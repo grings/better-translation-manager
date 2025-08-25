@@ -643,6 +643,7 @@ object FormCSVImport: TFormCSVImport
           Parent = LayoutControlDoneGroup_Root
           AlignHorz = ahClient
           AlignVert = avClient
+          Visible = False
           CaptionOptions.ShowAccelChar = False
           CaptionOptions.Text = 'Errors and warnings:'
           CaptionOptions.Layout = clTop
