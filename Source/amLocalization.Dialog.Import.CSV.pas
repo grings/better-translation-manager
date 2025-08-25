@@ -118,6 +118,8 @@ type
     dxLayoutGroup4: TdxLayoutGroup;
     dxLayoutGroup6: TdxLayoutGroup;
     dxLayoutGroup7: TdxLayoutGroup;
+    LayoutItemLayoutEscapeChar: TdxLayoutItem;
+    ComboBoxEscapeChar: TcxComboBox;
     procedure WizardControlPageChanging(Sender: TObject; ANewPage: TdxWizardControlCustomPage; var AAllow: Boolean);
     procedure EditFilenamePropertiesEditValueChanged(Sender: TObject);
     procedure ActionFileBrowseExecute(Sender: TObject);
@@ -133,6 +135,8 @@ type
     procedure LayoutRadioButtonItemMapValueClick(Sender: TObject);
     procedure LayoutRadioButtonItemMapBothClick(Sender: TObject);
     procedure LayoutRadioButtonItemMapIDClick(Sender: TObject);
+    procedure WizardControlInfoPanelClick(Sender: TObject; var AHandled: Boolean);
+    procedure ComboBoxEscapeCharPropertiesEditValueChanged(Sender: TObject);
   private type
     TColumnMapKind = (cmNone, cmMetaModule, cmMetaItem, cmMetaProperty, cmValueSource, cmValueTarget);
 
@@ -227,6 +231,7 @@ resourcestring
 const
   sDelimiters: array[0..3] of Char = (';', #9, ',', ' ');
   sSeparators: array[0..1] of Char = (',', '.');
+  sEscapeChars: array[0..1] of Char = (#0, '\');
 
 // -----------------------------------------------------------------------------
 //
@@ -1042,6 +1047,21 @@ begin
   QueuePreviewFile;
 end;
 
+procedure TFormCSVImport.ComboBoxEscapeCharPropertiesEditValueChanged(Sender: TObject);
+begin
+  if (ComboBoxEscapeChar.ItemIndex <> -1) then
+    FSettings.DelimiterChar := sEscapeChars[ComboBoxEscapeChar.ItemIndex]
+  else
+  begin
+    if (ComboBoxEscapeChar.Text = '') then
+      FSettings.EscapeChar := #0
+    else
+      FSettings.EscapeChar := ComboBoxEscapeChar.Text[1];
+  end;
+
+  InvalidatePreviewLayout;
+end;
+
 procedure TFormCSVImport.DisplayColumnMapPopupMenu(Column: TcxCustomGridTableItem);
 
   function LanguageID(Language: TLanguageItem): string;
@@ -1181,22 +1201,32 @@ begin
     ModalResult := mrCancel;
 end;
 
+procedure TFormCSVImport.WizardControlInfoPanelClick(Sender: TObject; var AHandled: Boolean);
+begin
+  LayoutItemLayoutEscapeChar.Visible := True;
+  WizardControl.InfoPanel.Enabled := False;
+  AHandled := True;
+end;
+
 procedure TFormCSVImport.WizardControlPageChanging(Sender: TObject; ANewPage: TdxWizardControlCustomPage; var AAllow: Boolean);
 begin
   if (ANewPage = WizardControlPageFile) then
   begin
     WizardControl.Buttons.Next.Enabled := FHasFile;
+    WizardControl.InfoPanel.Visible := False;
   end else
   if (ANewPage = WizardControlPageLayout) then
   begin
     ValidateLayout;
     PreviewLayout;
     WizardControl.Buttons.Next.Enabled := FHasValidLayout;
+    WizardControl.InfoPanel.Visible := True;
   end else
   if (ANewPage = WizardControlPageImport) then
   begin
     WizardControl.Buttons.Back.Enabled := True;
     WizardControl.Buttons.Next.Enabled := False;
+    WizardControl.InfoPanel.Visible := False;
   end else
   if (ANewPage = WizardControlPageProgress) then
   begin

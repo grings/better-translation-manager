@@ -25,7 +25,7 @@ uses
 type
   TCsvSettings = record
     Codepage: integer;
-    EscapeChar: Char;
+    EscapeChar: Char; // Note: Not part of RFC4148
     FirstRow: integer; // 1 based
     QuoteChar: Char;
     DelimiterChar: Char;
@@ -194,7 +194,7 @@ const
 class function TCsvSettings.Default: TCsvSettings;
 begin
   Result.Codepage := GetACP;
-  Result.EscapeChar := '\';
+  Result.EscapeChar := #0; // Note: EscapeChar is not part of RFC4148 so we disable it by default
   Result.FirstRow := 1;
   Result.QuoteChar := '"';
   Result.DelimiterChar := ';';
@@ -392,7 +392,11 @@ begin
         continue;
       end;
 
-      // Quote handling
+      // RFC4148 quote handling.
+      // Note that RFC4148 requires all fields in a row to be quoted if one
+      // field is quoted. We do not enforce that rule since it makes no
+      // difference.
+      //
       // Not in quote mode:
       // - A quote at start of field starts quote mode.
       // - A quote not at start of field is an error.
@@ -418,6 +422,7 @@ begin
       end;
 
       // Even though it's illogical (IMO) the escape char must be processed even when quoted
+      // TODO : Why? Where does this requirement come from? It's not a part of RFC4148
       if (BufChar = Settings.EscapeChar) then
       begin
         // Enter escape state and skip escape char
