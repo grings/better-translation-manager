@@ -25,7 +25,7 @@ uses
 type
   TCsvSettings = record
     Codepage: integer;
-    EscapeChar: Char;
+    EscapeChar: Char; // Note: Not part of RFC4148
     FirstRow: integer; // 1 based
     QuoteChar: Char;
     DelimiterChar: Char;
@@ -181,10 +181,6 @@ uses
   amProgress.Stream,
   amCursorService;
 
-const
-  // Line break character.
-  // #10 and #13 in the source CSV is converted to this character
-  CsvLineBreak: Char = #13;
 
 // -----------------------------------------------------------------------------
 //
@@ -194,7 +190,7 @@ const
 class function TCsvSettings.Default: TCsvSettings;
 begin
   Result.Codepage := GetACP;
-  Result.EscapeChar := '\';
+  Result.EscapeChar := #0; // Note: EscapeChar is not part of RFC4148 so we disable it by default
   Result.FirstRow := 1;
   Result.QuoteChar := '"';
   Result.DelimiterChar := ';';
@@ -392,28 +388,77 @@ begin
         continue;
       end;
 
-      // Quote handling
-      // Not in quote mode:
-      // - A quote at start of field starts quote mode.
-      // In quote mode:
-      // - Double quote emits a quote.
-      // - Single quote ends quote mode.
-      if (BufChar = Settings.QuoteChar) and ((Count = 0) or (Quoted)) then
+      // RFC4148 quote handling.
+      // Note that RFC4148 requires all fields in a row to be quoted if one
+      // field is quoted. We do not enforce that rule since it makes no
+      // difference.
+      //
+      // 1) Not in quote mode:
+      //    a) A quote at start of field starts quote mode.
+      //    b) A quote not at start of field is an error.
+      // 2) In quote mode:
+      //    a) Double-quote emits a quote.
+      //    b) Single-quote ends quote mode.
+      //
+      // Corner cases:
+      //
+      //   ""                   Empty, quoted field
+      //   """                  Quoted double-quote, field continues on next line...
+      //   """"                 Quoted double-quote
+      //
+      if (BufChar = Settings.QuoteChar) then
       begin
-        // Two consecutive quote chars outputs a single quote char.
-        if (Char(Reader.Peek) = Settings.QuoteChar) then
-        begin
-          // Skip next quote char and save current
-          StuffChar(BufChar);
-          Reader.Read;
-        end else
-          // Toggle quote state and skip quote char
-          Quoted := not Quoted;
 
-        continue;
+        // Case 2: In quote mode
+        if (Quoted) then
+        begin
+
+          var NextChar := Char(Reader.Peek);
+
+          // 2.a: Double-quote emits a quote.
+          if (NextChar = Settings.QuoteChar) then
+          begin
+
+            // Skip next quote char and save current. Stay in quote mode.
+            StuffChar(BufChar);
+            Reader.Read;
+
+          end else
+          // 2.b: Single-quote ends quote mode.
+          begin
+
+            // Exit quote mode and skip quote char
+            Quoted := False;
+
+            // Skip trailing space
+            while (Char(Reader.Peek) = ' ') do
+              Reader.Read;
+
+          end;
+
+          continue;
+
+        end else
+        // Case 1: Not in quote mode
+        begin
+
+          // 1.a: A quote at start of field starts quote mode.
+          if (Count = 0) then
+          begin
+            Quoted := True;
+          end else
+          // 1.b: A quote not at start of field is an error.
+          begin
+            // There's no good way to handle this; Just ignore it.
+          end;
+
+          continue;
+        end;
+
       end;
 
       // Even though it's illogical (IMO) the escape char must be processed even when quoted
+      // TODO : Why? Where does this requirement come from? It's not a part of RFC4148
       if (BufChar = Settings.EscapeChar) then
       begin
         // Enter escape state and skip escape char
@@ -425,37 +470,25 @@ begin
       begin
         if (BufChar = Settings.DelimiterChar) then
           break;
+
+        // Skip leading space
+        if (Count = 0) and (BufChar = ' ') then
+          continue;
+
+        // Quoted line breaks are output as-is. Unquoted terminates line.
+        if (CharInSet(BufChar, [#10, #13])) then
+        begin
+          // Ignore LF after CR
+          if (BufChar = #13) and (Reader.Peek = 10) then
+            Reader.Read;
+
+          // End row
+          EOL := True;
+          break;
+        end;
       end;
 
-      if (BufChar = #13) then
-      begin
-        // Ignore LF after CR
-        if (Reader.Peek = 10) then
-          Reader.Read;
-
-        if (not Quoted) then
-        begin
-          // End row
-          EOL := True;
-          break;
-        end else
-          StuffChar(CsvLineBreak);
-      end else
-      if (BufChar = #10) then
-      begin
-        // Ignore CR after LF
-        if (Reader.Peek = 13) then
-          Reader.Read;
-
-        if (not Quoted) then
-        begin
-          // End row
-          EOL := True;
-          break;
-        end else
-          StuffChar(CsvLineBreak);
-      end else
-        StuffChar(BufChar);
+      StuffChar(BufChar);
     end;
 
     // Save value

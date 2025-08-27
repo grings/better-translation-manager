@@ -11,7 +11,6 @@ object FormCSVImport: TFormCSVImport
   ParentFont = True
   Position = poMainFormCenter
   ShowHint = True
-  PixelsPerInch = 96
   TextHeight = 15
   object WizardControl: TdxWizardControl
     Left = 0
@@ -20,9 +19,12 @@ object FormCSVImport: TFormCSVImport
     Height = 462
     Buttons.CustomButtons.Buttons = <>
     Buttons.Help.Visible = False
+    InfoPanel.Caption = 'More options...'
+    InfoPanel.Hyperlink = 'lorem ipsum'
     OptionsViewStyleAero.Title.Text = 'Import translations from delimited text file'
     ViewStyle = wcvsAero
     OnButtonClick = WizardControlButtonClick
+    OnInfoPanelClick = WizardControlInfoPanelClick
     OnPageChanging = WizardControlPageChanging
     object WizardControlPageFile: TdxWizardControlPage
       Header.Title = 'Select source file'
@@ -30,7 +32,7 @@ object FormCSVImport: TFormCSVImport
         Left = 0
         Top = 0
         Width = 550
-        Height = 291
+        Height = 293
         Align = alClient
         ParentBackground = True
         TabOrder = 0
@@ -38,7 +40,7 @@ object FormCSVImport: TFormCSVImport
         LayoutLookAndFeel = DataModuleMain.LayoutSkinLookAndFeel
         DesignSize = (
           550
-          291)
+          293)
         object EditFilename: TcxButtonEdit
           Left = 66
           Top = 7
@@ -117,7 +119,7 @@ object FormCSVImport: TFormCSVImport
           Style.TransparentBorder = False
           Style.IsFontAssigned = True
           TabOrder = 3
-          Height = 185
+          Height = 187
           Width = 536
         end
         object LayoutControlFileGroup_Root: TdxLayoutGroup
@@ -196,10 +198,9 @@ object FormCSVImport: TFormCSVImport
         TabOrder = 0
         Transparent = True
         LayoutLookAndFeel = DataModuleMain.LayoutSkinLookAndFeel
-        ExplicitWidth = 525
         object ComboBoxDelimiter: TcxComboBox
-          Left = 101
-          Top = 6
+          Left = 111
+          Top = 7
           Properties.ImmediatePost = True
           Properties.Items.Strings = (
             'Semicolon'
@@ -214,8 +215,8 @@ object FormCSVImport: TFormCSVImport
           Width = 76
         end
         object ComboBoxDecimal: TcxComboBox
-          Left = 101
-          Top = 31
+          Left = 111
+          Top = 35
           Properties.DropDownListStyle = lsFixedList
           Properties.Items.Strings = (
             'Comma'
@@ -227,8 +228,8 @@ object FormCSVImport: TFormCSVImport
           Width = 76
         end
         object ImageDecimalWarning: TImage
-          Left = 183
-          Top = 31
+          Left = 194
+          Top = 35
           Width = 20
           Height = 16
           Hint = 'The field delimiter is the same as the decimal separator'
@@ -258,8 +259,8 @@ object FormCSVImport: TFormCSVImport
             426082}
         end
         object SpinEditFirstRow: TcxSpinEdit
-          Left = 101
-          Top = 56
+          Left = 111
+          Top = 63
           Properties.Alignment.Horz = taRightJustify
           Properties.ImmediatePost = True
           Properties.MaxValue = 100.000000000000000000
@@ -273,11 +274,11 @@ object FormCSVImport: TFormCSVImport
           Width = 76
         end
         object GridLayout: TcxGrid
-          Left = 6
-          Top = 93
-          Width = 538
-          Height = 194
-          TabOrder = 3
+          Left = 7
+          Top = 161
+          Width = 536
+          Height = 125
+          TabOrder = 4
           object GridLayoutTableView: TcxGridTableView
             Navigator.Buttons.CustomButtons = <>
             ScrollbarAnnotations.CustomAnnotations = <>
@@ -303,6 +304,20 @@ object FormCSVImport: TFormCSVImport
             GridView = GridLayoutTableView
           end
         end
+        object ComboBoxEscapeChar: TcxComboBox
+          Left = 111
+          Top = 91
+          Properties.ImmediatePost = True
+          Properties.Items.Strings = (
+            '(none)'
+            'Backslash')
+          Properties.OnEditValueChanged = ComboBoxEscapeCharPropertiesEditValueChanged
+          Style.HotTrack = False
+          Style.TransparentBorder = False
+          TabOrder = 3
+          Text = '(none)'
+          Width = 76
+        end
         object LayoutControlLayoutGroup_Root: TdxLayoutGroup
           AlignHorz = ahClient
           AlignVert = avClient
@@ -315,7 +330,7 @@ object FormCSVImport: TFormCSVImport
           AlignHorz = ahLeft
           CaptionOptions.Text = '&Field delimiter:'
           Control = ComboBoxDelimiter
-          ControlOptions.OriginalHeight = 19
+          ControlOptions.OriginalHeight = 21
           ControlOptions.OriginalWidth = 76
           ControlOptions.ShowBorder = False
           Index = 0
@@ -325,7 +340,7 @@ object FormCSVImport: TFormCSVImport
           AlignHorz = ahLeft
           CaptionOptions.Text = '&Decimal separator:'
           Control = ComboBoxDecimal
-          ControlOptions.OriginalHeight = 19
+          ControlOptions.OriginalHeight = 21
           ControlOptions.OriginalWidth = 76
           ControlOptions.ShowBorder = False
           Index = 0
@@ -351,7 +366,7 @@ object FormCSVImport: TFormCSVImport
           AlignHorz = ahLeft
           CaptionOptions.Text = 'F&irst row:'
           Control = SpinEditFirstRow
-          ControlOptions.OriginalHeight = 19
+          ControlOptions.OriginalHeight = 21
           ControlOptions.OriginalWidth = 76
           ControlOptions.ShowBorder = False
           Index = 2
@@ -466,6 +481,17 @@ object FormCSVImport: TFormCSVImport
           ShowBorder = False
           Index = 4
         end
+        object LayoutItemLayoutEscapeChar: TdxLayoutItem
+          Parent = dxLayoutGroup3
+          AlignHorz = ahLeft
+          Visible = False
+          CaptionOptions.Text = 'Escape char:'
+          Control = ComboBoxEscapeChar
+          ControlOptions.OriginalHeight = 21
+          ControlOptions.OriginalWidth = 76
+          ControlOptions.ShowBorder = False
+          Index = 3
+        end
       end
     end
     object WizardControlPageImport: TdxWizardControlPage
@@ -474,7 +500,7 @@ object FormCSVImport: TFormCSVImport
         AlignWithMargins = True
         Left = 32
         Top = 32
-        Width = 450
+        Width = 518
         Height = 72
         Margins.Left = 32
         Margins.Top = 32
@@ -482,7 +508,7 @@ object FormCSVImport: TFormCSVImport
         Margins.Bottom = 0
         Align = alTop
         Caption = 'Start import'
-        Constraints.MaxWidth = 450
+        Constraints.MaxWidth = 518
         Description = 'Update translations with values from the import file'
         Kind = cxbkCommandLink
         TabOrder = 0
@@ -493,7 +519,6 @@ object FormCSVImport: TFormCSVImport
         Font.Style = []
         ParentFont = False
         OnClick = ButtonImportClick
-        ExplicitWidth = 0
       end
     end
     object WizardControlPageProgress: TdxWizardControlPage
@@ -502,7 +527,7 @@ object FormCSVImport: TFormCSVImport
         Left = 0
         Top = 0
         Width = 550
-        Height = 291
+        Height = 293
         Align = alClient
         ColumnClick = False
         Columns = <
@@ -530,14 +555,12 @@ object FormCSVImport: TFormCSVImport
         Left = 0
         Top = 0
         Width = 550
-        Height = 291
+        Height = 293
         Align = alClient
         ParentBackground = True
         TabOrder = 0
         Transparent = True
         LayoutLookAndFeel = DataModuleMain.LayoutSkinLookAndFeel
-        ExplicitWidth = 0
-        ExplicitHeight = 0
         object LabelCountAdded: TcxLabel
           Left = 73
           Top = 30
@@ -547,6 +570,7 @@ object FormCSVImport: TFormCSVImport
           Style.TransparentBorder = False
           Properties.Alignment.Horz = taRightJustify
           Properties.ShowAccelChar = False
+          TabOrder = 0
           Transparent = True
           Height = 16
           Width = 50
@@ -561,6 +585,7 @@ object FormCSVImport: TFormCSVImport
           Style.TransparentBorder = False
           Properties.Alignment.Horz = taRightJustify
           Properties.ShowAccelChar = False
+          TabOrder = 1
           Transparent = True
           Height = 16
           Width = 50
@@ -575,6 +600,7 @@ object FormCSVImport: TFormCSVImport
           Style.TransparentBorder = False
           Properties.Alignment.Horz = taRightJustify
           Properties.ShowAccelChar = False
+          TabOrder = 2
           Transparent = True
           Height = 16
           Width = 50
@@ -599,7 +625,7 @@ object FormCSVImport: TFormCSVImport
           AlignHorz = ahLeft
           CaptionOptions.Text = 'Added:'
           Control = LabelCountAdded
-          ControlOptions.OriginalHeight = 14
+          ControlOptions.OriginalHeight = 16
           ControlOptions.OriginalWidth = 50
           ControlOptions.ShowBorder = False
           Index = 0
@@ -610,7 +636,7 @@ object FormCSVImport: TFormCSVImport
           CaptionOptions.ShowAccelChar = False
           CaptionOptions.Text = 'Updated:'
           Control = LabelCountUpdated
-          ControlOptions.OriginalHeight = 14
+          ControlOptions.OriginalHeight = 16
           ControlOptions.OriginalWidth = 50
           ControlOptions.ShowBorder = False
           Index = 1
@@ -621,7 +647,7 @@ object FormCSVImport: TFormCSVImport
           CaptionOptions.ShowAccelChar = False
           CaptionOptions.Text = 'Skipped:'
           Control = LabelCountSkipped
-          ControlOptions.OriginalHeight = 14
+          ControlOptions.OriginalHeight = 16
           ControlOptions.OriginalWidth = 50
           ControlOptions.ShowBorder = False
           Index = 2
@@ -643,6 +669,7 @@ object FormCSVImport: TFormCSVImport
           Parent = LayoutControlDoneGroup_Root
           AlignHorz = ahClient
           AlignVert = avClient
+          Visible = False
           CaptionOptions.ShowAccelChar = False
           CaptionOptions.Text = 'Errors and warnings:'
           CaptionOptions.Layout = clTop

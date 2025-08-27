@@ -114,7 +114,7 @@ procedure TLocalizerPOImport.ImportFromFile(const AFilename: string; AEncoding: 
 var
   Stream: TStream;
 begin
-  Stream := TFileStream.Create(AFilename, fmOpenRead);
+  Stream := TFileStream.Create(AFilename, fmOpenRead or fmShareDenyWrite);
   try
     ImportFromStream(Stream, AEncoding, Language);
   finally

@@ -118,6 +118,8 @@ type
     dxLayoutGroup4: TdxLayoutGroup;
     dxLayoutGroup6: TdxLayoutGroup;
     dxLayoutGroup7: TdxLayoutGroup;
+    LayoutItemLayoutEscapeChar: TdxLayoutItem;
+    ComboBoxEscapeChar: TcxComboBox;
     procedure WizardControlPageChanging(Sender: TObject; ANewPage: TdxWizardControlCustomPage; var AAllow: Boolean);
     procedure EditFilenamePropertiesEditValueChanged(Sender: TObject);
     procedure ActionFileBrowseExecute(Sender: TObject);
@@ -133,6 +135,8 @@ type
     procedure LayoutRadioButtonItemMapValueClick(Sender: TObject);
     procedure LayoutRadioButtonItemMapBothClick(Sender: TObject);
     procedure LayoutRadioButtonItemMapIDClick(Sender: TObject);
+    procedure WizardControlInfoPanelClick(Sender: TObject; var AHandled: Boolean);
+    procedure ComboBoxEscapeCharPropertiesEditValueChanged(Sender: TObject);
   private type
     TColumnMapKind = (cmNone, cmMetaModule, cmMetaItem, cmMetaProperty, cmValueSource, cmValueTarget);
 
@@ -227,6 +231,7 @@ resourcestring
 const
   sDelimiters: array[0..3] of Char = (';', #9, ',', ' ');
   sSeparators: array[0..1] of Char = (',', '.');
+  sEscapeChars: array[0..1] of Char = (#0, '\');
 
 // -----------------------------------------------------------------------------
 //
@@ -562,6 +567,64 @@ end;
 
 // -----------------------------------------------------------------------------
 //
+//      Compare two strings, disregarding different linebreak types
+//
+// -----------------------------------------------------------------------------
+function SameTextIgnoreLinebreaks(const A, B: string): boolean;
+begin
+  var pA := PChar(A);
+  var pB := PChar(B);
+
+  var CurrentA := pA^;
+  var CurrentB := pB^;
+
+  while (CurrentA <> #0) and (CurrentB <> #0) do
+  begin
+    Inc(pA);
+    Inc(pB);
+
+    var NextA := pA^;
+    var NextB := pB^;
+
+    // Convert #13#10 to #13 and #10 to #13
+    if (NextA = #10) then
+    begin
+      if (CurrentA = #13) then
+      begin
+        // #13#10 - skip #10
+        Inc(pA);
+        NextA := pA^;
+      end else
+        // Convert #10 to #13
+        NextA := #13;
+    end;
+
+    if (NextB = #10) then
+    begin
+      if (CurrentB = #13) then
+      begin
+        // #13#10 - skip #10
+        Inc(pB);
+        NextB := pB^;
+      end else
+        // Convert #10 to #13
+        NextB := #13;
+    end;
+
+    // Compare
+    if (CurrentA <> CurrentB) then
+      Exit(False);
+
+    CurrentA := NextA;
+    CurrentB := NextB;
+  end;
+
+  Result := (CurrentA = CurrentB); // Both #0 or strings not the same length
+end;
+
+
+// -----------------------------------------------------------------------------
+//
 //              TPreviewStream
 //
 // -----------------------------------------------------------------------------
@@ -713,7 +776,7 @@ begin
   end;
 
   try
-    var Stream := TFileStream.Create(Filename, fmOpenRead);
+    var Stream := TFileStream.Create(Filename, fmOpenRead or fmShareDenyWrite);
     try
 
       // Detect codepage and display warning if user has selected a codepage other
@@ -802,7 +865,7 @@ begin
     Exit;
 
   try
-    var Stream := TFileStream.Create(Filename, fmOpenRead);
+    var Stream := TFileStream.Create(Filename, fmOpenRead or fmShareDenyWrite);
     try
       var Encoding := TEncoding.GetEncoding(Codepage);
       try
@@ -830,14 +893,22 @@ begin
             end;
           end;
 
+          // Get approximate row count
           begin
+            var RowCount := 0;
             Stream.Position := 0;
             var Reader := TStreamReader.Create(Stream, Encoding);
-            Reader.EndOfStream;
+            try
+              Reader.EndOfStream;
 
-            var RowCount := 0;
-            while (RowCount < MaxRows) and (not Reader.EndOfStream) do
-              Inc(RowCount);
+              while (RowCount < MaxRows) and (not Reader.EndOfStream) do
+              begin
+                Reader.ReadLine;
+                Inc(RowCount);
+              end;
+            finally
+              Reader.Free;
+            end;
 
             // HasMore can be used to enable a "Load more..." button in the grid
             // if we should implement that.
@@ -865,6 +936,9 @@ begin
 
                 Inc(Row);
               end;
+
+              // Trim grid to actual row count
+              GridLayoutTableView.DataController.RecordCount := Row;
 
               // Only display navigator column if we have any rows. Otherwise the grid will
               // only display the top, left cell and that looks strange.
@@ -907,6 +981,7 @@ begin
   FSettings := TCsvSettings.Default;
   LoadEncodings;
   Codepage := FSettings.Codepage;
+  FMapMode := [mmID];
 
   Result := (ShowModal = mrOK);
 end;
@@ -981,6 +1056,21 @@ begin
 
   // Update async to give combo a chance to drop up so we can display progress unobscured
   QueuePreviewFile;
+end;
+
+procedure TFormCSVImport.ComboBoxEscapeCharPropertiesEditValueChanged(Sender: TObject);
+begin
+  if (ComboBoxEscapeChar.ItemIndex <> -1) then
+    FSettings.DelimiterChar := sEscapeChars[ComboBoxEscapeChar.ItemIndex]
+  else
+  begin
+    if (ComboBoxEscapeChar.Text = '') then
+      FSettings.EscapeChar := #0
+    else
+      FSettings.EscapeChar := ComboBoxEscapeChar.Text[1];
+  end;
+
+  InvalidatePreviewLayout;
 end;
 
 procedure TFormCSVImport.DisplayColumnMapPopupMenu(Column: TcxCustomGridTableItem);
@@ -1122,22 +1212,32 @@ begin
     ModalResult := mrCancel;
 end;
 
+procedure TFormCSVImport.WizardControlInfoPanelClick(Sender: TObject; var AHandled: Boolean);
+begin
+  LayoutItemLayoutEscapeChar.Visible := True;
+  WizardControl.InfoPanel.Enabled := False;
+  AHandled := True;
+end;
+
 procedure TFormCSVImport.WizardControlPageChanging(Sender: TObject; ANewPage: TdxWizardControlCustomPage; var AAllow: Boolean);
 begin
   if (ANewPage = WizardControlPageFile) then
   begin
     WizardControl.Buttons.Next.Enabled := FHasFile;
+    WizardControl.InfoPanel.Visible := False;
   end else
   if (ANewPage = WizardControlPageLayout) then
   begin
     ValidateLayout;
     PreviewLayout;
     WizardControl.Buttons.Next.Enabled := FHasValidLayout;
+    WizardControl.InfoPanel.Visible := True;
   end else
   if (ANewPage = WizardControlPageImport) then
   begin
     WizardControl.Buttons.Back.Enabled := True;
     WizardControl.Buttons.Next.Enabled := False;
+    WizardControl.InfoPanel.Visible := False;
   end else
   if (ANewPage = WizardControlPageProgress) then
   begin
@@ -1410,7 +1510,7 @@ begin
       if (ApplyMakeAlike) then
         TargetValue := MakeAlike(Prop.Value, TargetValue);
 
-      if (Translation.Value <> TargetValue) then
+      if (Translation.Value <> TargetValue) and (not SameTextIgnoreLinebreaks(Translation.Value, TargetValue)) then
       begin
         Translation.Update(TargetValue);
         Inc(FTranslationCount.CountUpdated);
@@ -1462,7 +1562,8 @@ var
     for var i := 0 to High(Translations) do
     begin
       var TargetValue := Values[Translations[i].Index];
-      if (TargetValue = SourceValue) then
+
+      if (TargetValue = '') or (TargetValue = SourceValue) then
       begin
         Inc(FTranslationCount.CountSkipped);
         continue;
@@ -1485,7 +1586,8 @@ var
     if (Result >= MatchSame) then
       exit
     else
-    if (AnsiSameText(Prop.Value, SourceValue)) then
+    if (SameTextIgnoreLinebreaks(Prop.Value, SourceValue)) then
+//    if (AnsiSameText(Prop.Value, SourceValue)) then
       Result := MatchSame
     else
     if (Matchness >= MatchSanitized) then
@@ -1528,7 +1630,7 @@ begin
     Progress.RaiseOnAbort := True;
     Progress.Show;
 
-    var Stream := TFileStream.Create(Filename, fmOpenRead);
+    var Stream := TFileStream.Create(Filename, fmOpenRead or fmShareDenyWrite);
     try
 
       // Create lookup now if we know that we will need it
@@ -1582,15 +1684,24 @@ begin
                       if (Prop.EffectiveStatus = ItemStatusTranslate) then
                       begin
                         Matchness := MatchExact;
+
                         if (SourceIndex <> -1) then
                         begin
                           SourceValue := Values[SourceIndex];
+
                           if (SourceValue <> Prop.Value) then
                           begin
-                            // Do not import obsolete translations
-                            Warning('Source value obsolete: %s.%s.%s', [ModuleName, Values[ItemIndex], Values[PropIndex]]);
-                            Prop := nil;
-                            Skip := True;
+                            // CSV import cannot represent different linebreak types so an
+                            // imported linebreak might not match the original line break
+                            // type. Compare the string again while disregarding linebreak
+                            // type:
+                            if (not SameTextIgnoreLinebreaks(SourceValue, Prop.Value)) then
+                            begin
+                              // Do not import obsolete translations
+                              Warning('Source value changed; Translation obsolete: %s.%s.%s', [ModuleName, Values[ItemIndex], Values[PropIndex]]);
+                              Prop := nil;
+                              Skip := True;
+                            end;
                           end;
                         end else
                           SourceValue := Prop.Value;
@@ -1618,7 +1729,8 @@ begin
                 // Maybe refactor this into a common function
 
                 // Try to locate term in project
-                var List := ProjectPropertyLookup.Lookup(SanitizeText(SourceValue));
+                var SanitizedText := SanitizeText(SourceValue);
+                var List := ProjectPropertyLookup.Lookup(SanitizedText);
 
                 if (List <> nil) and (List.Count > 0) then
                 begin
