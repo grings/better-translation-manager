@@ -2929,7 +2929,7 @@ begin
     FProject.BeginUpdate;
     try
 
-      Stream := TFileStream.Create(Filename, fmOpenRead);
+      Stream := TFileStream.Create(Filename, fmOpenRead or fmShareDenyWrite);
       try
         Progress := ShowProgress(sPOImportProgress);
         Progress.EnableAbort := True;
@@ -4019,7 +4019,7 @@ begin
         FProjectFilename := Filename;
         try
 
-          Stream := TFileStream.Create(FProjectFilename, fmOpenRead);
+          Stream := TFileStream.Create(FProjectFilename, fmOpenRead or fmShareDenyWrite);
           try
             ProgressStream := TProgressStream.Create(Stream, Progress);
             try

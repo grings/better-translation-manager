@@ -93,7 +93,7 @@ begin
   // Restore registry branch from external file
   try
 
-    var Stream := TFileStream.Create(PortableConfigFilename, fmOpenRead);
+    var Stream := TFileStream.Create(PortableConfigFilename, fmOpenRead or fmShareDenyWrite);
     try
       Settings.LoadRegistryFromStream(Stream);
     finally

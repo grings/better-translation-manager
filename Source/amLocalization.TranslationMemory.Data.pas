@@ -1331,7 +1331,7 @@ procedure TDataModuleTranslationMemory.LoadFromFile(const Filename: string);
 var
   Stream: TStream;
 begin
-  Stream := TFileStream.Create(Filename, fmOpenRead);
+  Stream := TFileStream.Create(Filename, fmOpenRead or fmShareDenyWrite);
   try
     LoadFromStream(Stream);
   finally

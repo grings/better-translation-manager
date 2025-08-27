@@ -188,7 +188,7 @@ class procedure TLocalizationProjectFiler.LoadFromFile(Project: TLocalizerProjec
 var
   Stream: TStream;
 begin
-  Stream := TFileStream.Create(Filename, fmOpenRead);
+  Stream := TFileStream.Create(Filename, fmOpenRead or fmShareDenyWrite);
   try
     LoadFromStream(Project, LoadProperties, Stream, Progress);
   finally

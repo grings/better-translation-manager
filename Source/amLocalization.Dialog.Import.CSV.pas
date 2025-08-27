@@ -776,7 +776,7 @@ begin
   end;
 
   try
-    var Stream := TFileStream.Create(Filename, fmOpenRead);
+    var Stream := TFileStream.Create(Filename, fmOpenRead or fmShareDenyWrite);
     try
 
       // Detect codepage and display warning if user has selected a codepage other
@@ -865,7 +865,7 @@ begin
     Exit;
 
   try
-    var Stream := TFileStream.Create(Filename, fmOpenRead);
+    var Stream := TFileStream.Create(Filename, fmOpenRead or fmShareDenyWrite);
     try
       var Encoding := TEncoding.GetEncoding(Codepage);
       try
@@ -1619,7 +1619,7 @@ begin
     Progress.RaiseOnAbort := True;
     Progress.Show;
 
-    var Stream := TFileStream.Create(Filename, fmOpenRead);
+    var Stream := TFileStream.Create(Filename, fmOpenRead or fmShareDenyWrite);
     try
 
       // Create lookup now if we know that we will need it
