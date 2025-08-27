@@ -893,14 +893,22 @@ begin
             end;
           end;
 
+          // Get approximate row count
           begin
+            var RowCount := 0;
             Stream.Position := 0;
             var Reader := TStreamReader.Create(Stream, Encoding);
-            Reader.EndOfStream;
+            try
+              Reader.EndOfStream;
 
-            var RowCount := 0;
-            while (RowCount < MaxRows) and (not Reader.EndOfStream) do
-              Inc(RowCount);
+              while (RowCount < MaxRows) and (not Reader.EndOfStream) do
+              begin
+                Reader.ReadLine;
+                Inc(RowCount);
+              end;
+            finally
+              Reader.Free;
+            end;
 
             // HasMore can be used to enable a "Load more..." button in the grid
             // if we should implement that.
@@ -928,6 +936,9 @@ begin
 
                 Inc(Row);
               end;
+
+              // Trim grid to actual row count
+              GridLayoutTableView.DataController.RecordCount := Row;
 
               // Only display navigator column if we have any rows. Otherwise the grid will
               // only display the top, left cell and that looks strange.
