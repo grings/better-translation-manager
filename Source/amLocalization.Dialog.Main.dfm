@@ -501,8 +501,8 @@ object FormMain: TFormMain
             3BDA4E7B74052AEED8261D0722AFA0C39F732FB670DC9CB2F10BCBF71602A640
             3E9FEF29081D03C8E572F80B0DC1D40A858270A7B3CBEB7F1ACCA7D3E95A2693
             018962BF063F167DE6F72ACA936D0000000049454E44AE426082}
-          Properties.CaseInsensitive = False
           Properties.ImmediatePost = True
+          Properties.IncrementalSearch = False
           Properties.ValidationOptions = [evoShowErrorIcon]
           OnGetCellHint = GridItemsTableViewColumnGetCellHint
           OnValidateDrawValue = GridItemsTableViewColumnTargetValidateDrawValue
