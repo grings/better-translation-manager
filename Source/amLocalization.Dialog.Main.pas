@@ -528,6 +528,8 @@ type
     procedure ActionPurgeSelectedUpdate(Sender: TObject);
     procedure ActionGotoNextStateObsoleteExecute(Sender: TObject);
     procedure TreeListModulesCompare(Sender: TcxCustomTreeList; ANode1, ANode2: TcxTreeListNode; var ACompare: Integer);
+    procedure GridItemsTableViewDataControllerCompare(ADataController: TcxCustomDataController; ARecordIndex1, ARecordIndex2,
+      AItemIndex: Integer; const V1, V2: Variant; var Compare: Integer);
   private
     FProject: TLocalizerProject;
     FProjectFilename: string;
@@ -6715,6 +6717,16 @@ begin
   end;
 
   ADone := True;
+end;
+
+procedure TFormMain.GridItemsTableViewDataControllerCompare(ADataController: TcxCustomDataController; ARecordIndex1, ARecordIndex2,
+  AItemIndex: Integer; const V1, V2: Variant; var Compare: Integer);
+begin
+  // Natural sort for Element column
+  if (AItemIndex = GridItemsTableViewColumnItemName.Index) then
+    Compare := string.Compare(VarToStr(V1), VarToStr(V2), [coIgnoreCase, coDigitAsNumbers], LOCALE_INVARIANT)
+  else
+    Compare := ADataController.DefaultCompare(ARecordIndex1, ARecordIndex2, AItemIndex);
 end;
 
 procedure TFormMain.GridItemsTableViewDataControllerRecordChanged(ADataController: TcxCustomDataController; ARecordIndex, AItemIndex: Integer);

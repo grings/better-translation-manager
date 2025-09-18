@@ -364,6 +364,7 @@ object FormMain: TFormMain
         DataController.Summary.DefaultGroupSummaryItems = <>
         DataController.Summary.FooterSummaryItems = <>
         DataController.Summary.SummaryGroups = <>
+        DataController.OnCompare = GridItemsTableViewDataControllerCompare
         DataController.OnRecordChanged = GridItemsTableViewDataControllerRecordChanged
         OptionsBehavior.CellHints = True
         OptionsBehavior.FocusCellOnTab = True
