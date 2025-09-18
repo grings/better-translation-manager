@@ -527,6 +527,7 @@ type
     procedure ActionPurgeSelectedExecute(Sender: TObject);
     procedure ActionPurgeSelectedUpdate(Sender: TObject);
     procedure ActionGotoNextStateObsoleteExecute(Sender: TObject);
+    procedure TreeListModulesCompare(Sender: TcxCustomTreeList; ANode1, ANode2: TcxTreeListNode; var ACompare: Integer);
   private
     FProject: TLocalizerProject;
     FProjectFilename: string;
@@ -7911,6 +7912,35 @@ begin
     end;
   finally
     FRefreshModuleStatsQueued := False;
+  end;
+end;
+
+procedure TFormMain.TreeListModulesCompare(Sender: TcxCustomTreeList; ANode1, ANode2: TcxTreeListNode; var ACompare: Integer);
+begin
+  ACompare := 0;
+
+  for var i := 0 to Sender.SortedColumnCount-1 do
+  begin
+    // resourcestrings always before anything else, regardless of sort order
+    if (TLocalizerModule(ANode1.Data).Kind = mkString) then
+      ACompare := -1
+    else
+    if (TLocalizerModule(ANode2.Data).Kind = mkString) then
+      ACompare := 1
+    else
+    begin
+      if (i = 0) then
+        // Sort module name using locale invariant compare; We don't want, for example, AE, OE, and AA treated as Ø, Æ, and Å
+        ACompare := string.Compare(ANode1.Texts[i], ANode2.Texts[i], [coIgnoreCase, coDigitAsNumbers], LOCALE_INVARIANT)
+      else
+        ACompare := string.Compare(ANode1.Texts[i], ANode2.Texts[i], [coIgnoreCase, coDigitAsNumbers]);
+
+      if (Sender.SortedColumns[i].SortOrder = soDescending) then
+        ACompare := -ACompare;
+    end;
+
+    if (ACompare <> 0) then
+      break;
   end;
 end;
 

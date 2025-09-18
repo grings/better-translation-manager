@@ -198,6 +198,7 @@ object FormMain: TFormMain
       Styles.Indicator = DataModuleMain.StyleDefault
       Styles.UseOddEvenStyles = bFalse
       TabOrder = 0
+      OnCompare = TreeListModulesCompare
       OnFocusedColumnChanged = TreeListModulesFocusedColumnChanged
       OnFocusedNodeChanged = TreeListModulesFocusedNodeChanged
       OnGetNodeImageIndex = TreeListModulesGetNodeImageIndex
