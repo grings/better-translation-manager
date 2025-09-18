@@ -705,7 +705,7 @@ begin
 
     // Post processing to apply "required properties" rules.
 
-    // If a required property is missing from the element we create it and mark it "Synthesized"
+    // If a required property is missing from the element we create it and then mark it "Synthesized"
     for var i := 0 to High(FRequiredPropertyRules) do
     begin
       if (not FRequiredPropertyRules[i].HasRegEx) then
@@ -719,8 +719,40 @@ begin
         continue;
 
       // Look for required property name
-      if (Item.FindProperty(FRequiredPropertyRules[i].PropertyName) <> nil) then
-        continue;
+
+      // Special case:
+      //
+      // - Property previously had a value, but now doesn't appear in the DFM.
+      //   For example:
+      //   * Before: FieldName='Foo', DisplayLabel='Bar'
+      //   * Now:    FieldName='Foo'
+      //
+      // - The property will exist in the project, but not in the DFM.
+      //
+      // - The property will have had the ItemStateUpdating flag set and the
+      //   ReadProperty call above will not clear it (since it doesn't exist
+      //   in the DFM).
+      //
+      // - Item.FindProperty will find the old property (from the project)
+      //   and clear the ItemStateUpdating flag.
+      //
+      // - Since the property was found, it will not be synthesized, and will
+      //   retain its old (now obsolete) value.
+      //
+      // To work around this we call FindProperty(UpdateState=False) so we can
+      // determine if the returned property should be marked synthesized.
+      //
+      var Prop := Item.FindProperty(FRequiredPropertyRules[i].PropertyName, False, False);
+      if (Prop <> nil) then
+      begin
+        // In case property was previously defined but should now be synthesized,
+        // we clear the update flag and continue to have the property value
+        // updated below.
+        if (ItemStateUpdating in Prop.State) then
+          Prop.ClearState(ItemStateUpdating)
+        else
+          continue;
+      end;
 
       // Property not found. Get the value the new property should have.
       var Value: string;
@@ -730,13 +762,18 @@ begin
         var SourceProp := Item.FindProperty(Copy(FRequiredPropertyRules[i].PropertyValue, 2, MaxInt));
         if (SourceProp = nil) then
           continue;
+
         Value := SourceProp.Value;
       end else
         // Get literal value
         Value := FRequiredPropertyRules[i].PropertyValue;
 
-      // Create new property (or find existing one)
-      var Prop := Item.AddProperty(FRequiredPropertyRules[i].PropertyName, Value);
+      // Create new property (or find existing one), or update the one we found above
+      if (Prop = nil) then
+        Prop := Item.AddProperty(FRequiredPropertyRules[i].PropertyName, Value)
+      else
+        Prop.Value := Value;
+
       Prop.Synthesized := True;
     end;
 

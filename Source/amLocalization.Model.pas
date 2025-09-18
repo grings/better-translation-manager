@@ -354,7 +354,7 @@ type
     function Purge: boolean;
     class function PurgeItem(Item: TLocalizerItem; KeepTranslations: boolean): boolean;
 
-    function FindProperty(const AName: string; IgnoreUnused: boolean = False): TLocalizerProperty;
+    function FindProperty(const AName: string; IgnoreUnused: boolean = False; UpdateState: boolean = True): TLocalizerProperty;
     function AddProperty(const AName: string): TLocalizerProperty; overload;
     function AddProperty(const AName: string; const AValue: string): TLocalizerProperty; overload;
 
@@ -1229,9 +1229,11 @@ begin
         for Module in Modules.Values do
         begin
           Module.SetState(ItemStateUpdating);
+
           for Item in Module.Items.Values do
           begin
             Item.SetState(ItemStateUpdating);
+
             for Prop in Item.Properties.Values do
               Prop.SetState(ItemStateUpdating);
           end;
@@ -1253,7 +1255,7 @@ begin
   if (FLoadCount = 0) then
   begin
     // Referencing an item during "load" will clear the ItemStateUpdating flag set in BeginLoad.
-    // Any items that still have ItemStateUpdating set in EndLoad will get ItemStateUnused set instead.
+    // Any items that still have ItemStateUpdating set in EndLoad will have ItemStateUnused set instead.
     // This way we can mark the items that were not refenced during update/import/etc.
     if (ClearUpdating or MarkUnused) then
     begin
@@ -1265,6 +1267,7 @@ begin
           begin
             if (MarkUnused) then
               Module.SetState(ItemStateUnused);
+
             if (ClearUpdating) then
               Module.ClearState(ItemStateUpdating);
           end;
@@ -1275,6 +1278,7 @@ begin
             begin
               if (MarkUnused) then
                 Item.SetState(ItemStateUnused);
+
               if (ClearUpdating) then
                 Item.ClearState(ItemStateUpdating);
             end;
@@ -1284,6 +1288,7 @@ begin
               begin
                 if (MarkUnused) then
                   Prop.SetState(ItemStateUnused);
+
                 if (ClearUpdating) then
                   Prop.ClearState(ItemStateUpdating);
               end;
@@ -1895,13 +1900,16 @@ end;
 
 // -----------------------------------------------------------------------------
 
-function TLocalizerItem.FindProperty(const AName: string; IgnoreUnused: boolean): TLocalizerProperty;
+function TLocalizerItem.FindProperty(const AName: string; IgnoreUnused: boolean; UpdateState: boolean): TLocalizerProperty;
 begin
   if (FProperties.TryGetValue(AName, Result)) and ((not IgnoreUnused) or (not Result.IsUnused)) then
   begin
     if (ProjectStateLoading in Module.Project.State) then
       Result.ClearState(ItemStateNew);
-    Result.ClearState(ItemStateUpdating);
+
+    if (UpdateState) then
+      Result.ClearState(ItemStateUpdating);
+
     Result.ClearState(ItemStateUnused);
   end else
     Result := nil;
