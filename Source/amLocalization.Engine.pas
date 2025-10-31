@@ -10,10 +10,16 @@
 
 interface
 
+// IGNORE_DUPLICATE_RESOURCESTRING
+// Define to ignore duplicate resource string symbols declared in the DRC file
+{$define IGNORE_DUPLICATE_RESOURCESTRING}
+
 uses
-  Windows,
+  Classes,
   SysUtils,
+  Windows,
   Generics.Collections,
+  Generics.Defaults,
   amLocalization.Model,
   amLocalization.ResourceWriter;
 
@@ -37,6 +43,7 @@ type
 type
   TResourceStringSymbolMap = class
   private
+    FComparer: TStringComparer;
     FSymbols: TDictionary<string, Word>;
     FIDs: TDictionary<Word, string>;
     FConflicts: TList<string>;
@@ -52,9 +59,10 @@ type
     procedure Add(const Symbol: string; ID: Word);
 
     function TryLookupSymbol(const Symbol: string; var ID: Word): boolean;
-    function TryLookupID(ID: Word; Var Symbol: string): boolean;
+    function TryLookupID(ID: Word; var Symbol: string): boolean;
 
     function HasConflicts: boolean;
+    procedure GetConflicts(ANames: TStrings);
   end;
 
 
@@ -82,9 +90,15 @@ type
   private
     FTranslationCount: TTranslationCounts;
     FIncludeVersionInfo: boolean;
+    FConflicts: TStrings;
+  private
+    function GetConflicts: TStrings;
+    function GetHasConflicts: boolean;
   protected
     class function DefaultTranslator(Language: TTranslationLanguage; Prop: TLocalizerProperty; var NewValue: string): boolean; static;
   public
+    destructor Destroy; override;
+
     procedure Execute(Action: TLocalizerImportAction; Project: TLocalizerProject; const Filename: string; Language: TTranslationLanguage; const ResourceWriter: IResourceWriter; Translator: TTranslateProc = nil); overload;
     procedure Execute(Action: TLocalizerImportAction; Project: TLocalizerProject; Instance: HINST; Language: TTranslationLanguage; const ResourceWriter: IResourceWriter; Translator: TTranslateProc = nil); overload;
 
@@ -93,6 +107,9 @@ type
 
     property TranslationCount: TTranslationCounts read FTranslationCount;
     property IncludeVersionInfo: boolean read FIncludeVersionInfo write FIncludeVersionInfo;
+
+    property HasConflicts: boolean read GetHasConflicts;
+    property Conflicts: TStrings read GetConflicts;
   end;
 
   EResourceProcessor = class(Exception);
@@ -107,7 +124,6 @@ resourcestring
 implementation
 
 uses
-  Classes,
   Math,
   IOUtils,
   StrUtils,
@@ -125,7 +141,8 @@ constructor TResourceStringSymbolMap.Create;
 begin
   inherited Create;
 
-  FSymbols := TDictionary<string, Word>.Create;
+  FComparer := TOrdinalIStringComparer.Create;
+  FSymbols := TDictionary<string, Word>.Create(FComparer);
   FIDs := TDictionary<Word, string>.Create;
 end;
 
@@ -205,8 +222,16 @@ begin
   FSymbols.Free;
   FIDs.Free;
   FConflicts.Free;
+  FComparer.Free;
 
   inherited;
+end;
+
+procedure TResourceStringSymbolMap.GetConflicts(ANames: TStrings);
+begin
+  if (FConflicts <> nil) then
+    for var Name in FConflicts do
+      ANames.Add(Name);
 end;
 
 // -----------------------------------------------------------------------------
@@ -271,35 +296,39 @@ end;
 
 procedure TResourceStringSymbolMap.Add(const Symbol: string; ID: Word);
 var
-  SymbolName, DuplicateName: string;
+  DuplicateName: string;
   DuplicateValue: Word;
 begin
-  SymbolName := AnsiUppercase(Symbol);
   // Look for existing symbol
-  if (FSymbols.TryGetValue(SymbolName, DuplicateValue)) then
+  if (FSymbols.TryGetValue(Symbol, DuplicateValue)) then
   begin
+    // While the ID values in a DRC file are always unique, the symbols can
+    // be duplicated in case of duplicate resourcestring names within a unit.
+    // Since the symbol/ID pairs are actually C #defines, a later declaration
+    // will always replace earlier ones, which we can then ignore.
+
     // Existing symbol found
     if (DuplicateValue <> ID) then
     begin
       // Existing is conflict.
       // Update existing symbol->id
-      FSymbols.AddOrSetValue(SymbolName, ID);
+      FSymbols.AddOrSetValue(Symbol, ID);
+
       // Get existing id->symbol
       DuplicateName := FIDs[DuplicateValue];
+
       // Replace existing id->symbol with new
       FIDs.Remove(DuplicateValue);
       FIDs.Add(ID, Symbol);
+
       // Save conflict
-      if (DuplicateName <> Symbol) then
-      begin
-        if (FConflicts = nil) then
-          FConflicts := TList<string>.Create;
-        FConflicts.Add(DuplicateName);
-      end;
+      if (FConflicts = nil) then
+        FConflicts := TList<string>.Create;
+      FConflicts.Add(DuplicateName);
     end;
   end else
   begin
-    FSymbols.Add(SymbolName, ID);
+    FSymbols.Add(Symbol, ID);
 
     // Look for existing ID
     if (FIDs.TryGetValue(ID, DuplicateName)) then
@@ -310,8 +339,9 @@ begin
         // Existing is conflict.
         // Update existing id->symbol
         FIDs.AddOrSetValue(ID, Symbol);
+
         // Remove existing symbol->id
-        FSymbols.Remove(AnsiUppercase(DuplicateName));
+        FSymbols.Remove(DuplicateName);
 
         // Save conflict
         if (FConflicts = nil) then
@@ -334,7 +364,7 @@ end;
 
 function TResourceStringSymbolMap.TryLookupSymbol(const Symbol: string; var ID: Word): boolean;
 begin
-  Result := FSymbols.TryGetValue(AnsiUppercase(Symbol), ID);
+  Result := FSymbols.TryGetValue(Symbol, ID);
 end;
 
 
@@ -351,6 +381,7 @@ type
   protected
     FTranslationCounts: TTranslationCounts;
   protected
+    function GetHasConflicts: boolean; virtual;
     procedure DoSetTranslation(Prop: TLocalizerProperty; Language: TTranslationLanguage; const Value: string);
     property Module: TLocalizerModule read FModule;
     property Instance: HINST read FInstance;
@@ -360,7 +391,11 @@ type
     function Execute(Action: TLocalizerImportAction; ResourceWriter: IResourceWriter; Language: TTranslationLanguage; Translator: TTranslateProc): boolean; overload; virtual; abstract;
     function Execute(Action: TLocalizerImportAction; ResourceWriter: IResourceWriter; Language: TTranslationLanguage): boolean; overload;
 
+    procedure GetConflicts(ANames: TStrings); virtual;
+
     property TranslationCount: TTranslationCounts read FTranslationCounts;
+
+    property HasConflicts: boolean read GetHasConflicts;
   end;
 
 // -----------------------------------------------------------------------------
@@ -378,6 +413,18 @@ function TModuleResourceProcessor.Execute(Action: TLocalizerImportAction; Resour
 begin
   Result := Execute(Action, ResourceWriter, Language, TProjectResourceProcessor.DefaultTranslator);
 end;
+
+// -----------------------------------------------------------------------------
+
+procedure TModuleResourceProcessor.GetConflicts(ANames: TStrings);
+begin
+end;
+
+function TModuleResourceProcessor.GetHasConflicts: boolean;
+begin
+  Result := False;
+end;
+
 
 // -----------------------------------------------------------------------------
 
@@ -1001,12 +1048,15 @@ type
     FSymbolMap: TResourceStringSymbolMap;
     FResourceGroups: TResourceGroups;
   protected
+    function GetHasConflicts: boolean; override;
     procedure ExecuteGroup(Action: TLocalizerImportAction; ResourceGroupID: Word; ReadStream, WriteStream: TStream; Language: TTranslationLanguage; Translator: TTranslateProc);
   public
     constructor Create(AModule: TLocalizerModule; AInstance: HINST; AResourceGroups: TResourceGroups);
     destructor Destroy; override;
 
     function Execute(Action: TLocalizerImportAction; ResourceWriter: IResourceWriter; Language: TTranslationLanguage; Translator: TTranslateProc): boolean; override;
+
+    procedure GetConflicts(ANames: TStrings); override;
   end;
 
 // -----------------------------------------------------------------------------
@@ -1113,7 +1163,7 @@ begin
 
       // Skip string if value is empty and ID is unknown
       Name := '';
-      if (FSymbolMap.TryLookupID(ResourceID, Name)) or (not Value.IsEmpty) then
+      if (FSymbolMap.TryLookupID(ResourceID, Name)) {$if not defined(IGNORE_DUPLICATE_RESOURCESTRING)} or (not Value.IsEmpty) {$ifend} then
       begin
         if (not Name.IsEmpty) then
         begin
@@ -1183,11 +1233,31 @@ begin
 end;
 
 
+procedure TModuleStringResourceProcessor.GetConflicts(ANames: TStrings);
+begin
+  inherited;
+  FSymbolMap.GetConflicts(ANames);
+end;
+
+function TModuleStringResourceProcessor.GetHasConflicts: boolean;
+begin
+  Result := FSymbolMap.HasConflicts;
+end;
+
 // -----------------------------------------------------------------------------
 //
 // TProjectProcessorDFMResource
 //
 // -----------------------------------------------------------------------------
+
+destructor TProjectResourceProcessor.Destroy;
+begin
+  FConflicts.Free;
+  inherited;
+end;
+
+// -----------------------------------------------------------------------------
+
 class function TProjectResourceProcessor.DefaultTranslator(Language: TTranslationLanguage; Prop: TLocalizerProperty; var NewValue: string): boolean;
 var
   Translation: TLocalizerTranslation;
@@ -1305,6 +1375,9 @@ var
 begin
   FillChar(FTranslationCount, SizeOf(FTranslationCount), 0);
 
+  if (FConflicts <> nil) then
+    FConflicts.Clear;
+
   Project.BeginUpdate;
   try
     Project.BeginLoad(Action = liaUpdateSource);
@@ -1362,6 +1435,9 @@ begin
               Inc(FTranslationCount.CountUpdated, ModuleProcessor.TranslationCount.CountUpdated);
               Inc(FTranslationCount.CountSkipped, ModuleProcessor.TranslationCount.CountSkipped);
 
+              if (ModuleProcessor.HasConflicts) then
+                ModuleProcessor.GetConflicts(Conflicts);
+
             finally
               ModuleProcessor.Free;
             end;
@@ -1403,6 +1479,19 @@ begin
   end;
 end;
 
+// -----------------------------------------------------------------------------
+
+function TProjectResourceProcessor.GetConflicts: TStrings;
+begin
+  if (FConflicts = nil) then
+    FConflicts := TStringList.Create;
+  Result := FConflicts;
+end;
+
+function TProjectResourceProcessor.GetHasConflicts: boolean;
+begin
+  Result := (FConflicts <> nil) and (FConflicts.Count > 0);
+end;
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------

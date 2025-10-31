@@ -4522,6 +4522,11 @@ var
   SaveModified: boolean;
   WasModified: boolean;
   CountRecovered: integer;
+resourcestring
+  sDuplicateResourcestringsTitle = 'Duplicate resourcestrings';
+  sDuplicateResourcestringsMessage = 'The project contains resourcestrings with the same name, within the same unit.'+#13#13+
+    'Duplicates have been ignored.'#13#13+
+    'Duplicates:'+#13+'%s';
 begin
   if (not CheckSourceFile) then
     Exit;
@@ -4580,6 +4585,10 @@ begin
         Exit;
       end;
     end;
+
+    if (ProjectProcessor.HasConflicts) then
+      TaskMessageDlg(sDuplicateResourcestringsTitle, Format(sDuplicateResourcestringsMessage, [ProjectProcessor.Conflicts.Text]), mtWarning, [mbOK], 0);
+
   finally
     ProjectProcessor.Free;
   end;
