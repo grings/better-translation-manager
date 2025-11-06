@@ -43,7 +43,6 @@ type
 type
   TResourceStringSymbolMap = class
   private
-    FComparer: TStringComparer;
     FSymbols: TDictionary<string, Word>;
     FIDs: TDictionary<Word, string>;
     FConflicts: TList<string>;
@@ -141,8 +140,7 @@ constructor TResourceStringSymbolMap.Create;
 begin
   inherited Create;
 
-  FComparer := TOrdinalIStringComparer.Create;
-  FSymbols := TDictionary<string, Word>.Create(FComparer);
+  FSymbols := TDictionary<string, Word>.Create(TIStringComparer.Ordinal);
   FIDs := TDictionary<Word, string>.Create;
 end;
 
@@ -222,7 +220,6 @@ begin
   FSymbols.Free;
   FIDs.Free;
   FConflicts.Free;
-  FComparer.Free;
 
   inherited;
 end;
