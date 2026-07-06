@@ -710,7 +710,7 @@ end;
 
 procedure TFormCSVImport.OnColumnMenuItemIgnoreClick(Sender: TObject);
 begin
-  FColumnMap[TMenuItem(Sender).Owner.Tag].Mapped := True;
+  FColumnMap[TMenuItem(Sender).Owner.Tag].Mapped := False;
   FColumnMap[TMenuItem(Sender).Owner.Tag].Kind := cmNone;
   GridLayoutTableView.Columns[TMenuItem(Sender).Owner.Tag].Caption := TMenuItem(Sender).Caption;
   ValidateLayout;
@@ -1371,7 +1371,10 @@ var
             GridLayoutTableView.Columns[i].Caption := Format(sColumnCaptionSourceLanguage, [LanguageID(Language)]);
 
           cmValueTarget:
-            GridLayoutTableView.Columns[i].Caption := Format(sColumnCaptionTargetLanguage, [LanguageID(Language)]);
+            begin
+              FColumnMap[i].Language := Language;
+              GridLayoutTableView.Columns[i].Caption := Format(sColumnCaptionTargetLanguage, [LanguageID(Language)]);
+            end;
         end;
 
         HasHeader := True;
